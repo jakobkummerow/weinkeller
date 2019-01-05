@@ -1,0 +1,175 @@
+#!/usr/bin/python3
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+import os
+import urllib
+
+from winedb.manager import Manager
+
+PORT_NUMBER = 7887
+
+class Handler(BaseHTTPRequestHandler):
+
+  def __init__(self, request, client_address, server):
+    self._server = server
+    BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+
+  def _set_headers(self, content_type):
+    self.send_response(200)
+    self.send_header('Content-type', content_type)
+    self.end_headers()
+
+  def _send_json(self, data):
+    self._set_headers('application/json')
+    response = urllib.parse.quote(json.dumps(data, sort_keys=True))
+    self.wfile.write(response.encode('utf-8'))
+
+  def do_GET(self):
+    parsed_path = urllib.parse.urlparse(self.path)
+    path = parsed_path.path
+
+    if path == '/':
+      path = '/index.html'
+
+    try:
+      mimetype = None
+      if path.endswith(".html"):
+        mimetype = "text/html; charset=utf-8"
+      elif path.endswith(".js"):
+        mimetype = "text/javascript"
+      elif path.endswith(".css"):
+        mimetype = "text/css"
+      if mimetype is not None:
+        self._set_headers(mimetype)
+        with open(os.curdir + path, "r") as f:
+          self.wfile.write(f.read().encode('utf-8'))
+        return
+      if path == "/favicon.ico":
+        self._set_headers("image/x-icon")
+        with open(os.curdir + path, "rb") as f:
+          self.wfile.write(f.read())
+    except IOError:
+      self.send_error(404, 'File not found: %s' % self.path)
+
+    raw_query = parsed_path.query
+    query = urllib.parse.parse_qs(raw_query)
+
+    if path == "/get_all":
+      self._send_json(self._server.manager.GetAll())
+
+    elif path == "/get_vineyards":
+      self._send_json(self._server.manager.GetVineyards())
+
+    elif path == "/get_wines":
+      wines = self._server.manager.GetWinesForVineyard(query["vineyard"][0])
+      self._send_json(wines)
+
+    elif path =="/get_log":
+      self._send_json(self._server.manager.GetLog(8))
+
+    elif path == "/vineyard_data":
+      vineyard = query["vineyard"][0]
+      self._send_json(self._server.manager.GetVineyardData(vineyard))
+
+    elif path =="/wine_data":
+      wine = query["wine"][0]
+      self._send_json(self._server.manager.GetWineData(wine))
+
+    elif path == "/countries":
+      self._send_json(self._server.manager.GetCountries())
+
+    elif path == "/regions":
+      country = query["country"][0]
+      self._send_json(self._server.manager.GetRegionsForCountry(country))
+
+    elif path == "/grapes":
+      self._send_json(self._server.manager.GetGrapes())
+
+  def _get_post_data(self, option):
+    return self._post_data[option][0]
+
+  def _get_optional(self, option, default):
+    if option in self._post_data:
+      return self._post_data[option][0]
+    return default
+
+  def do_POST(self):
+    content_length = int(self.headers['Content-Length'])
+    raw = str(self.rfile.read(content_length), encoding='utf-8')
+    self._post_data = urllib.parse.parse_qs(raw)
+    # print("post data: %s" % self._post_data)
+
+    if self.path == "/add_wine":
+      vineyard = self._get_post_data("vineyard")
+      wine = self._get_post_data("wine")
+      year = self._get_post_data("year")
+      count = self._get_optional("count", 0)
+      price = self._get_optional("price", 0)
+      comment = self._get_optional("comment", "")
+      reason = self._get_post_data("reason")
+      self._server.manager.AddWine(vineyard, wine, year, count, price, comment,
+                                   reason)
+      self._send_json(self._server.manager.GetAll())
+
+    elif self.path == "/add_bottle":
+      wineid = self._get_post_data("wineid")
+      reason = self._get_post_data("reason")
+      updated = self._server.manager.AddOneBottle(wineid, reason)
+      self._send_json({"wineid": wineid, "count": updated})
+
+    elif self.path == "/remove_bottle":
+      wineid = self._get_post_data("wineid")
+      reason = self._get_post_data("reason")
+      updated = self._server.manager.RemoveOneBottle(wineid, reason)
+      self._send_json({"wineid": wineid, "count": updated})
+
+    elif self.path == "/update":
+      wineid = self._get_post_data("wineid")
+      price = self._get_optional("price", 0)
+      comment = self._get_optional("comment", "")
+      self._server.manager.Update(wineid, price, comment)
+      self._send_json({"status": "ok"})
+
+    elif self.path == "/set_vineyard":
+      vineyard_id = self._get_post_data("vineyard_id")
+      country = self._get_optional("country", "")
+      region = self._get_optional("region", "")
+      address = self._get_optional("address", "")
+      website = self._get_optional("website", "")
+      comment = self._get_optional("comment", "")
+      self._server.manager.SetVineyardData(
+          vineyard_id, country, region, address, website, comment)
+      self._send_json({"status": "ok"})
+
+    elif self.path == "/update_log":
+      log_id = self._get_post_data("log_id")
+      reason = self._get_post_data("reason")
+      self._send_json(self._server.manager.UpdateLog(log_id, reason))
+
+    elif self.path == "/set_wine":
+      wine_id = self._get_post_data("wine_id")
+      grape = self._get_optional("grape", "")
+      comment = self._get_optional("comment", "")
+      self._server.manager.UpdateWine(wine_id, grape, comment)
+      self._send_json({"status": "ok"})
+
+class Server(HTTPServer):
+  def __init__(self, server_address, RequestHandlerClass):
+    HTTPServer.__init__(self, server_address, RequestHandlerClass)
+    self.manager = Manager(os.curdir + os.sep + "wines.sqlite3")
+    print("Server läuft auf Port %d" % server_address[1])
+
+  def Shutdown(self):
+    print("Shutting down")
+    self.manager.Shutdown()
+    HTTPServer.shutdown(self)
+
+try:
+  server = Server(('', PORT_NUMBER), Handler)
+  server.serve_forever()
+except KeyboardInterrupt:
+  print('')
+  print('Server wird beendet.')
+  server.Shutdown()
+

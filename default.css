@@ -1,0 +1,148 @@
+body {
+  font-family: Arial;
+  font-size: 12pt;
+}
+
+select {
+  font-size: 12pt;
+}
+
+td.vineyard {
+  cursor: hand;
+}
+td.wine {
+  cursor: hand;
+}
+button {
+  border-radius: 6px;
+  padding: 3px 8px 3px 8px;
+}
+button.plus {
+  background-color: #4ee68d;
+  border-right: 2px solid #3db36e;
+  border-bottom: 2px solid #3db36e;
+  border-top: 2px solid #99ffc3;
+  border-left: 2px solid #99ffc3;
+  font-weight: bold;
+  margin-left: 10px;
+  margin-right: 2px;
+}
+button.minus {
+  background-color: #e6737c;
+  border-right: 2px solid #b32430;
+  border-bottom: 2px solid #b32430;
+  border-top: 2px solid #ffb3b8;
+  border-left: 2px solid #ffb3b8;
+  font-weight: bold;
+}
+button.edit {
+  background-color: #ffffa0;
+  border-right: 2px solid #b3b370;
+  border-bottom: 2px solid #b3b370;
+  border-top: 2px solid #ffffe6;
+  border-left: 2px solid #ffffe6;
+  font-size: 12pt;
+}
+button.add {
+  background-color: #80b0ff;
+  border-right: 2px solid #5a7bb3;
+  border-bottom: 2px solid #5a7bb3;
+  border-top: 2px solid #ccdfff;
+  border-left: 2px solid #ccdfff;
+  font-size: 12pt;
+}
+
+table.winelist {
+  background-color: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 2px 2px 2px #aaa;
+  padding: 10px;
+}
+
+table.winelist > tbody > tr {
+  background-color: white;
+  border: 1px solid black;
+  margin: 2px;
+  padding: 2px;
+}
+
+table.winelist > tbody > tr > td {
+  /*font-size: 12pt;*/
+  padding: 3px;
+}
+
+table.winelist > tbody > tr > td > input {
+  background-color: #ffffe0;
+  border: 0px;
+  font-size: 12pt;
+  margin: -3px;
+  padding: 5px;
+}
+
+table.winelist > tfoot > tr > td > input {
+  background-color: #ffffe0;
+  border: 0px;
+  font-size: 12pt;
+  margin: 10px -1px -1px -1px;
+  padding: 5px;
+}
+
+table.winelist > tfoot > tr > td > button {
+  margin-top: 10px;
+}
+
+select.reason {
+  background-color: white;
+  border: 0px;
+  width: 20px;
+}
+
+div.edit_background {
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: 10000;
+}
+
+div.edit_container {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 10px 10px 60px #555;
+  cursor: default;
+  display: inline-block;
+  height: auto;
+  max-width: 50%;
+  padding: 2%;
+  position: relative;
+  vertical-align: middle;
+}
+
+table.edit_table {
+  display: inline-block;
+}
+
+.edit_helper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+
+td.label {
+  text-align: right;
+  vertical-align: top;
+  width: 50%;
+}
+
+#output {
+  background-color: #eee;
+  border: 1px solid black;
+  margin-top: 20px;
+  padding: 10px;
+}

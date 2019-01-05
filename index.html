@@ -1,0 +1,165 @@
+<html>
+<head>
+
+
+<link rel="stylesheet" type="text/css" href="default.css" media="screen" />
+
+<script type="text/javascript" src="utils.js"></script>
+<script type="text/javascript" src="winelist.js"></script>
+<script type="text/javascript" src="log.js"></script>
+<script type="text/javascript" src="vineyard-edit.js"></script>
+
+<style>
+
+</style>
+
+<script>
+"use strict";
+
+function start() {
+  PopulateList();
+  document.getElementById("add_vineyard").onchange = PopulateWines;
+  g_VineyardEdit.Init();
+  g_WineEdit.Init();
+  PopulateDefaultReasons();
+}
+
+</script>
+
+<title>Weinliste</title>
+
+</head>
+<body onload="start()">
+
+<p>
+  Einstellungen:
+  Standardgrund für Hinzufügen: <select id="default_reason_add"></select>
+  Standardgrund für Entfernen: <select id="default_reason_delete"></select>
+</p>
+
+<table class="winelist">
+<thead>
+<tr>
+  <td>Weingut</td><td>Wein</td><td>Jahr</td><td>Anzahl</td>
+  <td>Preis</td><!--<td>Bewertung</td>--><td>Kommentar</td><td></td>
+</tr>
+</thead>
+<tbody id="winelist">
+</tbody>
+<tfoot>
+<tr>
+  <td>
+    <input type="text" id="add_vineyard" placeholder="Weingut"
+           list="vineyards_completions" class="edit">
+    <datalist id="vineyards_completions"></datalist>
+  </td>
+  <td>
+    <input type="text" id="add_wine" placeholder="Wein"
+           list="wines_completions" class="edit">
+    <datalist id="wines_completions"></datalist>
+  </td>
+  <td>
+    <input type="text" id="add_year" placeholder="Jahr" class="edit">
+  </td>
+  <td>
+    <input type="text" id="add_count" placeholder="Anzahl" class="edit">
+  </td>
+  <td>
+    <input type="text" id="add_price" placeholder="Preis" class="edit">
+  </td>
+  <td>
+    <input type="text" id="add_comment" placeholder="Kommentar" class="edit">
+  </td>
+  <td>
+    <button class="add" onclick="AddWine()">Hinzufügen</button>
+  </td>
+</tr>
+</tfoot>
+</table>
+
+<p>Letzte Änderungen:</p>
+<table class="winelist">
+  <thead>
+    <tr><td>Datum</td><td>Wein</td><td>Anzahl</td><td>Grund</td></tr>
+  </thead>
+  <tbody id="log"></tbody>
+</table>
+
+<p>Debugging-Output:</p>
+<div id="output"></div>
+
+<div id="vineyard_edit_background" class="edit_background">
+  <span class="edit_helper"></span>
+  <div id="vineyard_edit_container" class="edit_container">
+    <h2 id="vineyard_edit_title"> </h2>
+    <table class="edit_table">
+      <tr>
+        <td class="label">Land:</td>
+        <td id="vineyard_edit_country"> <!-- must keep this space -->
+          <datalist id="country_list"></datalist>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Region:</td>
+        <td id="vineyard_edit_region"> <!-- must keep this space -->
+          <datalist id="region_list"></datalist>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Website:</td>
+        <td id="vineyard_edit_website"><a href=""> </a></td>
+      </tr>
+      <tr>
+        <td class="label">Adresse:</td><td id="vineyard_edit_address"> </td>
+      </tr>
+      <tr>
+        <td class="label"></td>
+        <td id="vineyard_edit_maps"><a href="">Google Maps</a></td>
+      </tr>
+      <tr>
+        <td class="label">Kommentar:</td><td id="vineyard_edit_comment"> </td>
+      </tr>
+      <tr><td>&nbsp;</td></tr>
+      <tr>
+        <td class="label">
+          <button id="vineyard_edit_button_edit">Bearbeiten</button>
+        </td>
+        <td>
+          <button id="vineyard_edit_button_close">Schließen</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div id="wine_edit_background" class="edit_background">
+  <span class="edit_helper"></span>
+  <div id="wine_edit_container" class="edit_container">
+    <h2 id="wine_edit_title"> </h2>
+    <table class="edit_table">
+      <tr>
+        <td class="label">Weingut:</td><td id="wine_edit_vineyard"> </td>
+      </tr>
+      <tr>
+        <td class="label">Traube:</td>
+        <td id="wine_edit_grape">
+          <datalist id="grape_list"></datalist>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Kommentar:</td><td id="wine_edit_comment"> </td>
+      </tr>
+      <tr><td>&nbsp;</td></tr>
+      <tr>
+        <td class="label">
+          <button id="wine_edit_button_edit">Bearbeiten</button>
+        </td>
+        <td>
+          <button id="wine_edit_button_close">Schließen</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>
