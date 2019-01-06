@@ -101,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
     self._post_data = urllib.parse.parse_qs(raw)
     # print("post data: %s" % self._post_data)
 
-    if self.path == "/add_wine":
+    if self.path == "/add_all":
       vineyard = self._get_post_data("vineyard")
       wine = self._get_post_data("wine")
       year = self._get_post_data("year")
@@ -110,7 +110,32 @@ class Handler(BaseHTTPRequestHandler):
       comment = self._get_optional("comment", "")
       reason = self._get_post_data("reason")
       only_existing = self._get_post_data("only_existing")
-      self._server.manager.AddWine(vineyard, wine, year, count, price, comment,
+      self._server.manager.AddAll(vineyard, wine, year, count, price, comment,
+                                  reason)
+      self._send_json(self._server.manager.GetAll(only_existing))
+
+    elif self.path == "/add_wine":
+      vineyard_id = self._get_post_data("vineyard_id")
+      wine = self._get_post_data("wine")
+      year = self._get_post_data("year")
+      count = self._get_optional("count", 0)
+      price = self._get_optional("price", 0)
+      comment = self._get_optional("comment", "")
+      reason = self._get_post_data("reason")
+      only_existing = self._get_post_data("only_existing")
+      self._server.manager.AddWine(vineyard_id, wine, year, count, price,
+                                   comment, reason)
+      self._send_json(self._server.manager.GetAll(only_existing))
+
+    elif self.path == "/add_year":
+      wine_id = self._get_post_data("wine_id")
+      year = self._get_post_data("year")
+      count = self._get_optional("count", 0)
+      price = self._get_optional("price", 0)
+      comment = self._get_optional("comment", "")
+      reason = self._get_post_data("reason")
+      only_existing = self._get_post_data("only_existing")
+      self._server.manager.AddYear(wine_id, year, count, price, comment,
                                    reason)
       self._send_json(self._server.manager.GetAll(only_existing))
 

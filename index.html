@@ -18,6 +18,7 @@
 
 function start() {
   PopulateList();
+  document.getElementById("edit_mode").onchange = ToggleEditMode;
   document.getElementById("show_only_existing").onchange = ToggleShowExisting;
   document.getElementById("add_vineyard").onchange = PopulateWines;
   g_VineyardEdit.Init();
@@ -34,10 +35,20 @@ function start() {
 
 <p>
   Einstellungen:
-  <!-- TODO: use label -->
-  Nur vorhandene Weine anzeigen: <input id="show_only_existing" type="checkbox" checked>
-  Standardgrund für Hinzufügen: <select id="default_reason_add"></select>
-  Standardgrund für Entfernen: <select id="default_reason_delete"></select>
+  <span class="setting">
+    Editier-Modus: <input id="edit_mode" type="checkbox">
+  </span>
+  <span class="setting">
+    <!-- TODO: use label -->
+    Nur vorhandene Weine anzeigen:
+    <input id="show_only_existing" type="checkbox" checked>
+  </span>
+  <span class="setting">
+    Standardgrund für Hinzufügen: <select id="default_reason_add"></select>
+  </span>
+  <span class="setting">
+    Standardgrund für Entfernen: <select id="default_reason_delete"></select>
+  </span>
 </p>
 
 <table class="winelist">

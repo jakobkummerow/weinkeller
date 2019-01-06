@@ -163,17 +163,35 @@ class Manager:
         return word
     return ""
 
+  def _CreateWine(self, vineyard_id, wine):
+    grape = self._GuessGrapeForWine(wine)
+    self._conn.execute(
+        "INSERT INTO wines(vineyard, name, grape) VALUES (?, ?, ?)",
+        (vineyard_id, wine, grape))
+    return self._GetWine(vineyard_id, wine)
+
   def _GetOrCreateWine(self, vineyard_id, wine):
     r = self._GetWine(vineyard_id, wine)
     if r is None:
-      grape = self._GuessGrapeForWine(wine)
-      self._conn.execute(
-          "INSERT INTO wines(vineyard, name, grape) VALUES (?, ?, ?)",
-          (vineyard_id, wine, grape))
-      r = self._GetWine(vineyard_id, wine)
+      r = self._CreateWine(wineyard_id, wine)
     return r
 
-  def AddWine(self, vineyard, wine, year, count, price, comment, reason):
+  def AddYear(self, wine_id, year, count, price, comment, reason):
+    self._conn.execute("""
+        INSERT INTO years(wine, year, count, price, comment)
+        VALUES(?, ?, ?, ?, ?)""", (wine_id, year, count, price, comment))
+    c = self._conn.execute("SELECT id FROM years ORDER BY id DESC LIMIT 1")
+    r = c.fetchone()
+    year_id = r["id"]
+    self.Log(year_id, count, reason)
+
+  def AddWine(self, vineyard_id, wine, year, count, price, comment, reason):
+    grape = self._GuessGrapeForWine(wine)
+    r = self._CreateWine(vineyard_id, wine)
+    wine_id = r["id"]
+    self.AddYear(wine_id, year, count, price, comment, reason)
+
+  def AddAll(self, vineyard, wine, year, count, price, comment, reason):
     r = self._GetOrCreateVineyard(vineyard)
     vineyard_id = r["id"]
     r = self._GetOrCreateWine(vineyard_id, wine)
@@ -182,13 +200,7 @@ class Manager:
                            (wine_id, year))
     r = c.fetchone()
     if r is None:
-      self._conn.execute("""
-            INSERT INTO years(wine, year, count, price, comment)
-            VALUES(?, ?, ?, ?, ?)""", (wine_id, year, count, price, comment))
-      c = self._conn.execute("SELECT id FROM years ORDER BY id DESC LIMIT 1")
-      r = c.fetchone()
-      year_id = r["id"]
-      self.Log(year_id, count, reason)
+      self.AddYear(wine_id, year, count, price, comment, reason)
     else:
       # TODO: When does this happen? Handle this differently? Update other fields at least?
       # self._conn.execute("UPDATE years SET count=count+1 WHERE wine=? and year=?", (wine_id, year))

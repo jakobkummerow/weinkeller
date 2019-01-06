@@ -52,6 +52,14 @@ button.add {
   font-size: 12pt;
 }
 
+.setting {
+  background-color: #97c4d7;
+  border-radius: 6px;
+  box-shadow: 2px 2px 2px #aaa;
+  margin: 2px;
+  padding: 10px;
+}
+
 table.winelist {
   background-color: #f0f0f0;
   border: 1px solid #e0e0e0;

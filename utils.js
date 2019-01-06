@@ -11,6 +11,15 @@ function AppendTextTd(tr, text) {
   return td;
 }
 
+function AppendInputTd(tr, placeholder) {
+  var td = document.createElement("td");
+  var input = document.createElement("input");
+  input.setAttribute("class", "edit");
+  input.setAttribute("placeholder", placeholder);
+  td.appendChild(input);
+  tr.appendChild(td);
+}
+
 function Serialize(obj) {
   var str = [];
   for (var p in obj) {

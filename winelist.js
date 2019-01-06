@@ -14,6 +14,14 @@ function ShowOnlyExisting() {
   return document.getElementById("show_only_existing").checked ? 1 : 0;
 }
 
+function ReasonAdd() {
+  return document.getElementById("default_reason_add").value;
+}
+
+function IsEditMode() {
+  return document.getElementById("edit_mode").checked;
+}
+
 function ClickPlus(event) {
   var wineid = event.target.parentElement.parentElement.wineid;
   var reason = document.getElementById("default_reason_add").value;
@@ -62,6 +70,50 @@ function ToggleShowExisting() {
   PopulateList();
 }
 
+function ToggleEditMode() {
+  PopulateList();
+}
+
+function ClickAddYear(event) {
+  var tr = event.target.parentNode.parentNode;
+  var wine_id = tr.wineid;
+  var vineyard_td = tr.firstChild;
+  var wine_td = vineyard_td.nextSibling;
+  var year_td = wine_td.nextSibling;
+  var count_td = year_td.nextSibling;
+  var price_td = count_td.nextSibling;
+  var comment_td = price_td.nextSibling;
+  var year = year_td.firstChild.value;
+  var count = count_td.firstChild.value;
+  var price = ParsePrice(price_td.firstChild.value);
+  var comment = comment_td.firstChild.value;
+  var reason = ReasonAdd();
+  var only_existing = ShowOnlyExisting();
+  SendPost("add_year", PopulateList_Callback,
+           {wine_id, year, count, price, comment, reason, only_existing});
+}
+
+function ClickAddWine(event) {
+  var tr = event.target.parentNode.parentNode;
+  var vineyard_id = tr.vineyard_id;
+  var vineyard_td = tr.firstChild;
+  var wine_td = vineyard_td.nextSibling;
+  var year_td = wine_td.nextSibling;
+  var count_td = year_td.nextSibling;
+  var price_td = count_td.nextSibling;
+  var comment_td = price_td.nextSibling;
+  var wine = wine_td.firstChild.value;
+  var year = year_td.firstChild.value;
+  var count = count_td.firstChild.value;
+  var price = ParsePrice(price_td.firstChild.value);
+  var comment = comment_td.firstChild.value;
+  var reason = ReasonAdd();
+  var only_existing = ShowOnlyExisting();
+  SendPost(
+      "add_wine", PopulateList_Callback,
+      {vineyard_id, wine, year, count, price, comment, reason, only_existing});
+}
+
 function PopulateList() {
   var only_existing = ShowOnlyExisting();
   SendGet("get_all", PopulateList_Callback, {only_existing});
@@ -71,6 +123,7 @@ function PopulateList_Callback() {
   var winelist = document.getElementById("winelist");
   DropAllChildren(winelist);
   var response = decodeURIComponent(this.responseText);
+  var edit_mode = IsEditMode();
   document.getElementById("output").innerHTML = response;
   var all_wines = JSON.parse(response);
   for (var vineyard in all_wines) {
@@ -134,8 +187,44 @@ function PopulateList_Callback() {
         winelist.appendChild(tr);
         first_wine = false;
         first_year = false;
-      }
-    }
+      }  // for year in years
+      if (edit_mode) {
+        var tr = document.createElement("tr");
+        tr.wineid = wine_data.id;
+        AppendTextTd(tr, "");  // Vineyard.
+        AppendTextTd(tr, "");  // Wine.
+        AppendInputTd(tr, "neues Jahr");
+        AppendInputTd(tr, "Anzahl");
+        AppendInputTd(tr, "Preis");
+        AppendInputTd(tr, "Kommentar");
+        var button_td = document.createElement("td");
+        var button_add = document.createElement("button");
+        button_add.appendChild(document.createTextNode("Hinzufügen"));
+        button_add.setAttribute("class", "add");
+        button_add.onclick = ClickAddYear;
+        button_td.appendChild(button_add);
+        tr.appendChild(button_td);
+        winelist.appendChild(tr);
+      }  // edit_mode (years)
+    }  // for wine in wines
+    if (edit_mode) {
+      var tr = document.createElement("tr");
+      tr.vineyard_id = vineyard_data.id;
+      AppendTextTd(tr, "");  // Vineyard.
+      AppendInputTd(tr, "neuer Wein");
+      AppendInputTd(tr, "Jahr");
+      AppendInputTd(tr, "Anzahl");
+      AppendInputTd(tr, "Preis");
+      AppendInputTd(tr, "Kommentar");
+      var button_td = document.createElement("td");
+      var button_add = document.createElement("button");
+      button_add.appendChild(document.createTextNode("Hinzufügen"));
+      button_add.setAttribute("class", "add");
+      button_add.onclick = ClickAddWine;
+      button_td.appendChild(button_add);
+      tr.appendChild(button_td);
+      winelist.appendChild(tr);
+    }  // edit_mode (wines)
   }
   PopulateVineyards();
   PopulateLog();
@@ -148,7 +237,6 @@ function AddWine() {
   var count_input = document.getElementById("add_count");
   var price_input = document.getElementById("add_price");
   var comment_input = document.getElementById("add_comment");
-  var reason_input = document.getElementById("default_reason_add");
   var data = {
     vineyard: vineyard_input.value,
     wine: wine_input.value,
@@ -156,10 +244,10 @@ function AddWine() {
     count: count_input.value,
     price: ParsePrice(price_input.value),
     comment: comment_input.value,
-    reason: reason_input.value,
+    reason: ReasonAdd(),
     only_existing: ShowOnlyExisting()
   };
-  SendPost("add_wine", PopulateList_Callback, data);
+  SendPost("add_all", PopulateList_Callback, data);
   vineyard_input.value = "";
   wine_input.value = "";
   year_input.value = "";
