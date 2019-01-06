@@ -28,7 +28,7 @@ function ClickPlus_Callback() {
   var update = JSON.parse(response);
   var tr = document.getElementById("wine_" + update.wineid);
   var td = tr.firstChild.nextSibling.nextSibling.nextSibling;
-  td.replaceChild(document.createTextNode(update.count + " "), td.firstChild);
+  td.replaceChild(document.createTextNode(update.count), td.firstChild);
   PopulateLog();
 }
 

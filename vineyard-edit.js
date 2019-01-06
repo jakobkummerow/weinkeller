@@ -207,8 +207,10 @@ var g_WineEdit = (function() {
     grape_input.id = "wine_edit_countryinput";
     grape_input.setAttribute("list", "grape_list");
     var comment_td = Comment();
-    var comment_content = comment_td.innerHTML.replace("<br>", "\n");
-    comment_td.innerHTML = "<textarea>" + comment_content + "</textarea>";
+    var textarea = document.createElement("textarea");
+    textarea.value = comment_td.innerHTML.replace("<br>", "\n");
+    DropAllChildren(comment_td);
+    comment_td.appendChild(textarea);
     SendGet("grapes", GrapeListCallback);
   }
 
@@ -218,7 +220,7 @@ var g_WineEdit = (function() {
     var wine_id = Background().wine_id;
     var grape = ReplaceInputWithText(Grape());
     var comment_td = Comment();
-    var comment = comment_td.firstChild.innerHTML.replace("\n", "<br>");
+    var comment = comment_td.firstChild.value.replace("\n", "<br>");
     comment_td.innerHTML = comment;
     SendPost("set_wine", null, {wine_id, grape, comment})
   }
