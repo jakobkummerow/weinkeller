@@ -323,9 +323,9 @@ class Manager:
       if candidate: result.append(candidate)
     return result
 
-  def UpdateWine(self, wine_id, grape, comment):
-    self._conn.execute("UPDATE wines SET grape=?, comment=? WHERE id=?",
-                       (grape, comment, wine_id))
+  def UpdateWine(self, wine_id, name, grape, comment):
+    self._conn.execute("UPDATE wines SET name=?, grape=?, comment=? WHERE id=?",
+                       (name, grape, comment, wine_id))
     self._conn.commit()
 
 if __name__ == '__main__':

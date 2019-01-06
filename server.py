@@ -149,9 +149,10 @@ class Handler(BaseHTTPRequestHandler):
 
     elif self.path == "/set_wine":
       wine_id = self._get_post_data("wine_id")
+      name = self._get_post_data("name")
       grape = self._get_optional("grape", "")
       comment = self._get_optional("comment", "")
-      self._server.manager.UpdateWine(wine_id, grape, comment)
+      self._server.manager.UpdateWine(wine_id, name, grape, comment)
       self._send_json({"status": "ok"})
 
 class Server(HTTPServer):

@@ -164,6 +164,9 @@ var g_WineEdit = (function() {
   function Title() {
     return document.getElementById("wine_edit_title");
   }
+  function Name() {
+    return document.getElementById("wine_edit_name");
+  }
   function Vineyard() {
     return document.getElementById("wine_edit_vineyard");
   }
@@ -203,6 +206,7 @@ var g_WineEdit = (function() {
   function Edit(event) {
     event.stopPropagation();
     set_button_save();
+    ReplaceTextWithInput(Name());
     var grape_input = ReplaceTextWithInput(Grape());
     grape_input.id = "wine_edit_countryinput";
     grape_input.setAttribute("list", "grape_list");
@@ -218,11 +222,12 @@ var g_WineEdit = (function() {
     event.stopPropagation();
     set_button_edit();
     var wine_id = Background().wine_id;
+    var name = ReplaceInputWithText(Name());
     var grape = ReplaceInputWithText(Grape());
     var comment_td = Comment();
     var comment = comment_td.firstChild.value.replace("\n", "<br>");
     comment_td.innerHTML = comment;
-    SendPost("set_wine", null, {wine_id, grape, comment})
+    SendPost("set_wine", null, {wine_id, name, grape, comment})
   }
 
   return {
@@ -239,6 +244,7 @@ var g_WineEdit = (function() {
       box.wine_id = data.id;
       set_button_edit();
       set_text(Title(), data.wine);
+      set_text(Name(), data.wine);
       set_text(Vineyard(), data.vineyard);
       set_text(Grape(), data.grape);
       Comment().innerHTML = data.comment.replace("\n", "<br>");
