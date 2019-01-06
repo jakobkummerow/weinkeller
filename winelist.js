@@ -10,6 +10,10 @@ function ParsePrice(string) {
   return string.replace(",", ".");
 }
 
+function ShowOnlyExisting() {
+  return document.getElementById("show_only_existing").checked ? 1 : 0;
+}
+
 function ClickPlus(event) {
   var wineid = event.target.parentElement.parentElement.wineid;
   var reason = document.getElementById("default_reason_add").value;
@@ -54,8 +58,13 @@ function ClickSave(event) {
   SendPost("update", null, {wineid, price, comment});
 }
 
+function ToggleShowExisting() {
+  PopulateList();
+}
+
 function PopulateList() {
-  SendGet("get_all", PopulateList_Callback);
+  var only_existing = ShowOnlyExisting();
+  SendGet("get_all", PopulateList_Callback, {only_existing});
 }
 
 function PopulateList_Callback() {
@@ -147,7 +156,8 @@ function AddWine() {
     count: count_input.value,
     price: ParsePrice(price_input.value),
     comment: comment_input.value,
-    reason: reason_input.value
+    reason: reason_input.value,
+    only_existing: ShowOnlyExisting()
   };
   SendPost("add_wine", PopulateList_Callback, data);
   vineyard_input.value = "";

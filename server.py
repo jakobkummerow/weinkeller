@@ -56,7 +56,8 @@ class Handler(BaseHTTPRequestHandler):
     query = urllib.parse.parse_qs(raw_query)
 
     if path == "/get_all":
-      self._send_json(self._server.manager.GetAll())
+      only_existing = query["only_existing"][0]
+      self._send_json(self._server.manager.GetAll(only_existing))
 
     elif path == "/get_vineyards":
       self._send_json(self._server.manager.GetVineyards())
@@ -108,9 +109,10 @@ class Handler(BaseHTTPRequestHandler):
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
       reason = self._get_post_data("reason")
+      only_existing = self._get_post_data("only_existing")
       self._server.manager.AddWine(vineyard, wine, year, count, price, comment,
                                    reason)
-      self._send_json(self._server.manager.GetAll())
+      self._send_json(self._server.manager.GetAll(only_existing))
 
     elif self.path == "/add_bottle":
       wineid = self._get_post_data("wineid")

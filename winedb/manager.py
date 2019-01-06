@@ -217,7 +217,7 @@ class Manager:
                        (price, comment, wine_id))
     self._conn.commit()
 
-  def GetAll(self):
+  def GetAll(self, only_existing):
     result = {}
     vc = self._conn.execute("SELECT * FROM vineyards")
     for vineyard_row in vc:
@@ -232,8 +232,10 @@ class Manager:
         wine_data = {"years": years, "id": wine_row["id"],
                      "grape": wine_row["grape"]}
         wines[wine_row["name"]] = wine_data
-        yc = self._conn.execute("SELECT * FROM years WHERE wine=?",
-                                (wine_row["id"],))
+        query = "SELECT * FROM years WHERE wine=?"
+        if int(only_existing):
+          query += " AND count > 0"
+        yc = self._conn.execute(query, (wine_row["id"],))
         for year_row in yc:
           years[year_row["year"]] = {
             "wineid": year_row["id"],

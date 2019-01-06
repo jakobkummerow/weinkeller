@@ -18,6 +18,7 @@
 
 function start() {
   PopulateList();
+  document.getElementById("show_only_existing").onchange = ToggleShowExisting;
   document.getElementById("add_vineyard").onchange = PopulateWines;
   g_VineyardEdit.Init();
   g_WineEdit.Init();
@@ -33,6 +34,8 @@ function start() {
 
 <p>
   Einstellungen:
+  <!-- TODO: use label -->
+  Nur vorhandene Weine anzeigen: <input id="show_only_existing" type="checkbox" checked>
   Standardgrund für Hinzufügen: <select id="default_reason_add"></select>
   Standardgrund für Entfernen: <select id="default_reason_delete"></select>
 </p>
