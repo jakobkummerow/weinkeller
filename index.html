@@ -36,18 +36,18 @@ function start() {
 <p>
   Einstellungen:
   <span class="setting">
-    Editier-Modus: <input id="edit_mode" type="checkbox">
+    <label>Editier-Modus: <input id="edit_mode" type="checkbox"></label>
   </span>
   <span class="setting">
-    <!-- TODO: use label -->
-    Nur vorhandene Weine anzeigen:
-    <input id="show_only_existing" type="checkbox" checked>
+    <label>Nur vorhandene Weine anzeigen:
+      <input id="show_only_existing" type="checkbox" checked>
+    </label>
   </span>
   <span class="setting">
-    Standardgrund für Hinzufügen: <select id="default_reason_add"></select>
+    Grund für Hinzufügen: <select id="default_reason_add"></select>
   </span>
   <span class="setting">
-    Standardgrund für Entfernen: <select id="default_reason_delete"></select>
+    Grund für Entfernen: <select id="default_reason_delete"></select>
   </span>
 </p>
 
@@ -73,13 +73,13 @@ function start() {
     <datalist id="wines_completions"></datalist>
   </td>
   <td>
-    <input type="text" id="add_year" placeholder="Jahr" class="edit">
+    <input type="text" id="add_year" placeholder="Jahr" class="edit" size="4">
   </td>
   <td>
-    <input type="text" id="add_count" placeholder="Anzahl" class="edit">
+    <input type="text" id="add_count" placeholder="Anzahl" class="edit" size="8">
   </td>
   <td>
-    <input type="text" id="add_price" placeholder="Preis" class="edit">
+    <input type="text" id="add_price" placeholder="Preis" class="edit" size="4">
   </td>
   <td>
     <input type="text" id="add_comment" placeholder="Kommentar" class="edit">

@@ -77,6 +77,7 @@ table.winelist > tbody > tr {
 
 table.winelist > tbody > tr > td {
   /*font-size: 12pt;*/
+  max-width: 500px;
   padding: 3px;
 }
 
@@ -86,14 +87,16 @@ table.winelist > tbody > tr > td > input {
   font-size: 12pt;
   margin: -3px;
   padding: 5px;
+  width: 100%;
 }
 
 table.winelist > tfoot > tr > td > input {
   background-color: #ffffe0;
   border: 0px;
   font-size: 12pt;
-  margin: 10px -1px -1px -1px;
+  margin: 10px 0px -1px 0px;
   padding: 5px;
+  width: 100%;
 }
 
 table.winelist > tfoot > tr > td > button {

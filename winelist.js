@@ -49,21 +49,43 @@ function ClickEdit(event) {
                             event.target.firstChild);
   event.target.onclick = ClickSave;
   var td_comment = event.target.parentElement.previousSibling;
-  ReplaceTextWithInput(td_comment);
+  ReplaceTextWithInput(td_comment, 0, KeyUp);
   var td_price = td_comment.previousSibling;
-  ReplaceTextWithInput(td_price);
+  ReplaceTextWithInput(td_price, 4, KeyUp);
+}
+
+function KeyUp(event) {
+  if (event.key === "Enter") {
+    var e = event.target.parentElement.nextSibling;
+    while (e.firstChild.nodeName !== "BUTTON") e = e.nextSibling;
+    ClickSaveButton(e.firstChild, true);
+    event.preventDefault();
+  } else if (event.key === "Escape") {
+    var e = event.target.parentElement.nextSibling;
+    while (e.firstChild.nodeName !== "BUTTON") e = e.nextSibling;
+    ClickSaveButton(e.firstChild, false);
+    event.preventDefault();
+  }
 }
 
 function ClickSave(event) {
-  event.target.replaceChild(document.createTextNode("Bearbeiten"),
-                            event.target.firstChild);
-  event.target.onclick = ClickEdit;
-  var wineid = event.target.parentElement.parentElement.wineid;
-  var td_comment = event.target.parentElement.previousSibling;
-  var comment = ReplaceInputWithText(td_comment);
+  ClickSaveButton(event.target, true);
+}
+
+function ClickSaveButton(button, actually_save) {
+  button.replaceChild(document.createTextNode("Bearbeiten"), button.firstChild);
+  button.onclick = ClickEdit;
+  var wineid = button.parentElement.parentElement.wineid;
+  var td_comment = button.parentElement.previousSibling;
   var td_price = td_comment.previousSibling;
-  var price = ParsePrice(ReplaceInputWithText(td_price));
-  SendPost("update", null, {wineid, price, comment});
+  if (actually_save) {
+    var comment = ReplaceInputWithText(td_comment);
+    var price = ParsePrice(ReplaceInputWithText(td_price));
+    SendPost("update", null, {wineid, price, comment});
+  } else {
+    ReplaceInputWithText(td_comment, true);
+    ReplaceInputWithText(td_price, true);
+  }
 }
 
 function ToggleShowExisting() {

@@ -48,16 +48,21 @@ function SendGet(endpoint, callback, data = null) {
   xhr.send();
 }
 
-function ReplaceTextWithInput(parent) {
+function ReplaceTextWithInput(parent, size, keyup_handler) {
   var input = document.createElement("input");
   input.value = parent.textContent.trim();
+  input.original_value = input.value;
+  if (size) input.size = size;
+  if (keyup_handler) {
+    input.onkeyup = keyup_handler;
+  }
   parent.replaceChild(input, parent.firstChild);
   return input;
 }
 
-function ReplaceInputWithText(parent) {
+function ReplaceInputWithText(parent, restore_previous = false) {
   var input = parent.firstChild;
-  var value = input.value;
+  var value = restore_previous ? input.original_value : input.value;
   var text = document.createTextNode(value);
   parent.replaceChild(text, input);
   return value;

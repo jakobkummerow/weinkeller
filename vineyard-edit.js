@@ -149,6 +149,7 @@ var g_VineyardEdit = (function() {
 })();
 
 var g_WineEdit = (function() {
+  var sender_ = null;
   function Background() {
     return document.getElementById("wine_edit_background");
   }
@@ -228,6 +229,7 @@ var g_WineEdit = (function() {
     var comment = comment_td.firstChild.value.replace("\n", "<br>");
     comment_td.innerHTML = comment;
     SendPost("set_wine", null, {wine_id, name, grape, comment})
+    sender_.replaceChild(document.createTextNode(name), sender_.firstChild);
   }
 
   return {
@@ -249,6 +251,7 @@ var g_WineEdit = (function() {
       set_text(Grape(), data.grape);
       Comment().innerHTML = data.comment.replace("\n", "<br>");
     },
+    SetSender: function(sender) { sender_ = sender; },
   };
 })();
 
@@ -267,6 +270,7 @@ function ShowVineyardEdit_Callback() {
 function ShowWineEdit(event) {
   var wine = event.target.wine_id;
   SendGet("wine_data", ShowWineEdit_Callback, {wine});
+  g_WineEdit.SetSender(event.target);
 }
 
 function ShowWineEdit_Callback() {
