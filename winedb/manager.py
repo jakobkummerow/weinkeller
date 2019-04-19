@@ -88,11 +88,11 @@ class Manager:
     # TODO: create index?
     # TODO: temporary implementation:
     if filename == ":memory:":
-      self.AddWine("Beurer", "Gipskeuper", 2012, 1, 8.90, "", 2)
-      self.AddWine("Beurer", "Gipskeuper", 2013, 1, 9.90, "", 2)
-      self.AddWine("Beurer", "Schilfsandstein", 2012, 1, 10.90, "", 2)
-      self.AddWine("Zipf", "Inka", 2012, 1, 14.90, "", 2)
-      self.AddWine("Zipf", "Riesling **", 2013, 2, 7.50, "", 2)
+      self.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
+      self.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
+      self.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
+      self.AddWine("Zipf", "Inka", 2012, 1, 3, 14.90, "", 2)
+      self.AddWine("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
 
   def Shutdown(self):
     print("Committing and closing DB connection")
@@ -125,7 +125,7 @@ class Manager:
       INNER JOIN years on log.wine = years.id
       INNER JOIN wines on years.wine = wines.id
       INNER JOIN vineyards on wines.vineyard = vineyards.id
-      ORDER BY log.id DESC LIMIT ?""", str(count))
+      ORDER BY log.id DESC LIMIT ?""", (count,))
     result = []
     for row in c:
       result.append({
@@ -176,22 +176,24 @@ class Manager:
       r = self._CreateWine(wineyard_id, wine)
     return r
 
-  def AddYear(self, wine_id, year, count, price, comment, reason):
+  def AddYear(self, wine_id, year, count, rating, price, comment, reason):
     self._conn.execute("""
-        INSERT INTO years(wine, year, count, price, comment)
-        VALUES(?, ?, ?, ?, ?)""", (wine_id, year, count, price, comment))
+        INSERT INTO years(wine, year, count, rating, price, comment)
+        VALUES(?, ?, ?, ?, ?, ?)""",
+        (wine_id, year, count, rating, price, comment))
     c = self._conn.execute("SELECT id FROM years ORDER BY id DESC LIMIT 1")
     r = c.fetchone()
     year_id = r["id"]
     self.Log(year_id, count, reason)
 
-  def AddWine(self, vineyard_id, wine, year, count, price, comment, reason):
+  def AddWine(self, vineyard_id, wine, year, count, rating, price, comment,
+              reason):
     grape = self._GuessGrapeForWine(wine)
     r = self._CreateWine(vineyard_id, wine)
     wine_id = r["id"]
-    self.AddYear(wine_id, year, count, price, comment, reason)
+    self.AddYear(wine_id, year, count, rating, price, comment, reason)
 
-  def AddAll(self, vineyard, wine, year, count, price, comment, reason):
+  def AddAll(self, vineyard, wine, year, count, rating, price, comment, reason):
     r = self._GetOrCreateVineyard(vineyard)
     vineyard_id = r["id"]
     r = self._GetOrCreateWine(vineyard_id, wine)
@@ -200,7 +202,7 @@ class Manager:
                            (wine_id, year))
     r = c.fetchone()
     if r is None:
-      self.AddYear(wine_id, year, count, price, comment, reason)
+      self.AddYear(wine_id, year, count, rating, price, comment, reason)
     else:
       # TODO: When does this happen? Handle this differently? Update other fields at least?
       # self._conn.execute("UPDATE years SET count=count+1 WHERE wine=? and year=?", (wine_id, year))
@@ -229,6 +231,11 @@ class Manager:
                        (price, comment, wine_id))
     self._conn.commit()
 
+  def UpdateRating(self, wine_id, rating):
+    self._conn.execute("UPDATE years SET rating=? WHERE id=?",
+                       (rating, wine_id))
+    self._conn.commit()
+
   def GetAll(self, only_existing):
     result = {}
     vc = self._conn.execute("SELECT * FROM vineyards")
@@ -252,8 +259,8 @@ class Manager:
           years[year_row["year"]] = {
             "wineid": year_row["id"],
             "count": year_row["count"],
-            "price": year_row["price"],
             "rating": year_row["rating"],
+            "price": year_row["price"],
             "comment": year_row["comment"]
           }
     return result
@@ -344,9 +351,9 @@ class Manager:
 
 if __name__ == '__main__':
   m = Manager(":memory:")
-  m.AddWine("Beurer", "Gipskeuper", 2012, 1, 8.90, "")
-  m.AddWine("Beurer", "Gipskeuper", 2013, 1, 9.90, "")
-  m.AddWine("Beurer", "Schilfsandstein", 2012, 1, 10.90, "")
+  m.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "")
+  m.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "")
+  m.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "")
   m.AddOneBottle(1)
   c = m._conn.execute('select * from years')
   #print(c.fetchall())

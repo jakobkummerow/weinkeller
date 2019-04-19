@@ -11,11 +11,12 @@ function AppendTextTd(tr, text) {
   return td;
 }
 
-function AppendInputTd(tr, placeholder) {
+function AppendInputTd(tr, placeholder, size) {
   var td = document.createElement("td");
   var input = document.createElement("input");
   input.setAttribute("class", "edit");
   input.setAttribute("placeholder", placeholder);
+  if (size) input.setAttribute("size", size);
   td.appendChild(input);
   tr.appendChild(td);
 }

@@ -67,7 +67,7 @@ class Handler(BaseHTTPRequestHandler):
       self._send_json(wines)
 
     elif path =="/get_log":
-      self._send_json(self._server.manager.GetLog(8))
+      self._send_json(self._server.manager.GetLog(10))
 
     elif path == "/vineyard_data":
       vineyard = query["vineyard"][0]
@@ -106,12 +106,13 @@ class Handler(BaseHTTPRequestHandler):
       wine = self._get_post_data("wine")
       year = self._get_post_data("year")
       count = self._get_optional("count", 0)
+      rating = self._get_optional("rating", 0)
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
       reason = self._get_post_data("reason")
       only_existing = self._get_post_data("only_existing")
-      self._server.manager.AddAll(vineyard, wine, year, count, price, comment,
-                                  reason)
+      self._server.manager.AddAll(vineyard, wine, year, count, rating, price,
+                                  comment, reason)
       self._send_json(self._server.manager.GetAll(only_existing))
 
     elif self.path == "/add_wine":
@@ -119,23 +120,25 @@ class Handler(BaseHTTPRequestHandler):
       wine = self._get_post_data("wine")
       year = self._get_post_data("year")
       count = self._get_optional("count", 0)
+      rating = self._get_optional("rating", 0)
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
       reason = self._get_post_data("reason")
       only_existing = self._get_post_data("only_existing")
-      self._server.manager.AddWine(vineyard_id, wine, year, count, price,
-                                   comment, reason)
+      self._server.manager.AddWine(vineyard_id, wine, year, count, rating,
+                                   price, comment, reason)
       self._send_json(self._server.manager.GetAll(only_existing))
 
     elif self.path == "/add_year":
       wine_id = self._get_post_data("wine_id")
       year = self._get_post_data("year")
       count = self._get_optional("count", 0)
+      rating = self._get_optional("rating", 0)
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
       reason = self._get_post_data("reason")
       only_existing = self._get_post_data("only_existing")
-      self._server.manager.AddYear(wine_id, year, count, price, comment,
+      self._server.manager.AddYear(wine_id, year, count, rating, price, comment,
                                    reason)
       self._send_json(self._server.manager.GetAll(only_existing))
 
@@ -156,6 +159,12 @@ class Handler(BaseHTTPRequestHandler):
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
       self._server.manager.Update(wineid, price, comment)
+      self._send_json({"status": "ok"})
+
+    elif self.path == "/update_rating":
+      wineid = self._get_post_data("wineid")
+      rating = self._get_post_data("rating")
+      self._server.manager.UpdateRating(wineid, rating)
       self._send_json({"status": "ok"})
 
     elif self.path == "/set_vineyard":

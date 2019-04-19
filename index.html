@@ -55,7 +55,7 @@ function start() {
 <thead>
 <tr>
   <td>Weingut</td><td>Wein</td><td>Jahr</td><td>Anzahl</td>
-  <td>Preis</td><!--<td>Bewertung</td>--><td>Kommentar</td><td></td>
+  <td>Bewertung</td><td>Preis</td><td>Kommentar</td><td></td>
 </tr>
 </thead>
 <tbody id="winelist">
@@ -77,6 +77,20 @@ function start() {
   </td>
   <td>
     <input type="text" id="add_count" placeholder="Anzahl" class="edit" size="8">
+  </td>
+  <td>
+    <fieldset class="rating" id="add_rating">
+      <input type="radio" name="rating" value="5" id="add_rating_5" class="fivestar"/>
+      <label for="add_rating_5" title="5 stars"></label>
+      <input type="radio" name="rating" value="4" id="add_rating_4"/>
+      <label for="add_rating_4" title="4 stars"></label>
+      <input type="radio" name="rating" value="3" id="add_rating_3"/>
+      <label for="add_rating_3" title="3 stars"></label>
+      <input type="radio" name="rating" value="2" id="add_rating_2"/>
+      <label for="add_rating_2" title="2 stars"></label>
+      <input type="radio" name="rating" value="1" id="add_rating_1"/>
+      <label for="add_rating_1" title="1 star"></label>
+    </fieldset>
   </td>
   <td>
     <input type="text" id="add_price" placeholder="Preis" class="edit" size="4">

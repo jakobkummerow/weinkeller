@@ -22,6 +22,22 @@ function IsEditMode() {
   return document.getElementById("edit_mode").checked;
 }
 
+function GetRating(fieldset) {
+  var elements = fieldset.elements;
+  for (var i = 0; i < elements.length; i++) {
+    var input = elements.item(i);
+    if (input.checked) return input.value;
+  }
+  return 0;
+}
+
+function ClearRating(fieldset) {
+  var elements = fieldset.elements;
+  for (var i = 0; i < elements.length; i++) {
+    elements.item(i).checked = false;
+  }
+}
+
 function ClickPlus(event) {
   var wineid = event.target.parentElement.parentElement.wineid;
   var reason = document.getElementById("default_reason_add").value;
@@ -136,6 +152,15 @@ function ClickAddWine(event) {
       {vineyard_id, wine, year, count, price, comment, reason, only_existing});
 }
 
+function ClickRating(event) {
+  var input = event.target.previousSibling;
+  input.checked = true;
+  var rating = input.value;
+  var tr = event.target.parentNode.parentNode.parentNode;
+  var wineid = tr.wineid;
+  SendPost("update_rating", null, {wineid, rating});
+}
+
 function PopulateList() {
   var only_existing = ShowOnlyExisting();
   SendGet("get_all", PopulateList_Callback, {only_existing});
@@ -195,6 +220,31 @@ function PopulateList_Callback() {
         minus_button.onclick = ClickMinus;
         minus_button.setAttribute("class", "minus");
         td_count.appendChild(minus_button);
+        // Rating.
+        var td_rating = document.createElement("td");
+        var fieldset = document.createElement("fieldset");
+        fieldset.setAttribute("class", "rating");
+        var rating_titles = ["Herausragend", "Sehr gut", "Solide", "Mäßig",
+                             "Schlecht"];
+        for (var i = 0; i < 5; i++) {
+          var input = document.createElement("input");
+          var name = "rating" + data.wineid;
+          var input_id = name + i;
+          input.id = input_id;
+          input.type = "radio";
+          input.name = name;
+          input.value = (5 - i);
+          if (data.rating === (5 - i)) input.checked = true;
+          if (i === 0) input.setAttribute("class", "fivestar");
+          var label = document.createElement("label");
+          label.for = input_id;
+          label.title = rating_titles[i];
+          label.onclick = ClickRating;
+          fieldset.appendChild(input);
+          fieldset.appendChild(label);
+        }
+        td_rating.appendChild(fieldset);
+        tr.appendChild(td_rating);
         // Price, comment.
         AppendTextTd(tr, FormatPrice(data.price));
         AppendTextTd(tr, data.comment);
@@ -215,9 +265,10 @@ function PopulateList_Callback() {
         tr.wineid = wine_data.id;
         AppendTextTd(tr, "");  // Vineyard.
         AppendTextTd(tr, "");  // Wine.
-        AppendInputTd(tr, "neues Jahr");
-        AppendInputTd(tr, "Anzahl");
-        AppendInputTd(tr, "Preis");
+        AppendInputTd(tr, "neues Jahr", 4);
+        AppendInputTd(tr, "Anzahl", 8);
+        AppendTextTd(tr, "");  // TODO: rating?
+        AppendInputTd(tr, "Preis", 4);
         AppendInputTd(tr, "Kommentar");
         var button_td = document.createElement("td");
         var button_add = document.createElement("button");
@@ -234,9 +285,10 @@ function PopulateList_Callback() {
       tr.vineyard_id = vineyard_data.id;
       AppendTextTd(tr, "");  // Vineyard.
       AppendInputTd(tr, "neuer Wein");
-      AppendInputTd(tr, "Jahr");
-      AppendInputTd(tr, "Anzahl");
-      AppendInputTd(tr, "Preis");
+      AppendInputTd(tr, "Jahr", 4);
+      AppendInputTd(tr, "Anzahl", 8);
+      AppendTextTd(tr, "");  // TODO: rating?
+      AppendInputTd(tr, "Preis", 4);
       AppendInputTd(tr, "Kommentar");
       var button_td = document.createElement("td");
       var button_add = document.createElement("button");
@@ -257,6 +309,7 @@ function AddWine() {
   var wine_input = document.getElementById("add_wine");
   var year_input = document.getElementById("add_year");
   var count_input = document.getElementById("add_count");
+  var rating_fieldset = document.getElementById("add_rating");
   var price_input = document.getElementById("add_price");
   var comment_input = document.getElementById("add_comment");
   var data = {
@@ -264,6 +317,7 @@ function AddWine() {
     wine: wine_input.value,
     year: year_input.value,
     count: count_input.value,
+    rating: GetRating(rating_fieldset),
     price: ParsePrice(price_input.value),
     comment: comment_input.value,
     reason: ReasonAdd(),

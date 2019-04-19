@@ -99,6 +99,12 @@ table.winelist > tfoot > tr > td > input {
   width: 100%;
 }
 
+table.winelist > tfoot > tr > td > fieldset {
+  background-color: #ffffe0;
+  margin: 10px 0px -1px 0px;
+  padding: 2px;
+}
+
 table.winelist > tfoot > tr > td > button {
   margin-top: 10px;
 }
@@ -156,4 +162,38 @@ td.label {
   border: 1px solid black;
   margin-top: 20px;
   padding: 10px;
+}
+
+.rating {
+  border: none;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+.rating > input {
+  display: none;
+}
+
+.rating > label:before {
+  content: "★";
+  display: inline-block;
+  font-size: 18pt;
+  margin: -2px;
+}
+
+.rating > label {
+  color: #f0f0f0;
+  float: right;
+}
+
+.rating:not(:hover) > input:checked ~ label {
+  color: #FFD700;
+}
+.rating:not(:hover) > input.fivestar:checked ~ label {
+  text-shadow: 0px 0px 3px #FFED85;
+}
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+  color: #FFED85;
 }
