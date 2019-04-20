@@ -1,18 +1,16 @@
-#!/usr/bin/python3
-
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
+import threading
 import urllib
 
-from winedb.manager import Manager
+from .manager import Manager
 
-PORT_NUMBER = 7887
-
-class Handler(BaseHTTPRequestHandler):
+class WineHandler(BaseHTTPRequestHandler):
 
   def __init__(self, request, client_address, server):
     self._server = server
+    self._basedir = server.basedir
     BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
   def _set_headers(self, content_type):
@@ -42,12 +40,12 @@ class Handler(BaseHTTPRequestHandler):
         mimetype = "text/css"
       if mimetype is not None:
         self._set_headers(mimetype)
-        with open(os.curdir + path, "r") as f:
+        with open(self._basedir + path, "r") as f:
           self.wfile.write(f.read().encode('utf-8'))
         return
       if path == "/favicon.ico":
         self._set_headers("image/x-icon")
-        with open(os.curdir + path, "rb") as f:
+        with open(self._basedir + path, "rb") as f:
           self.wfile.write(f.read())
     except IOError:
       self.send_error(404, 'File not found: %s' % self.path)
@@ -191,22 +189,23 @@ class Handler(BaseHTTPRequestHandler):
       self._server.manager.UpdateWine(wine_id, name, grape, comment)
       self._send_json({"status": "ok"})
 
-class Server(HTTPServer):
-  def __init__(self, server_address, RequestHandlerClass):
-    HTTPServer.__init__(self, server_address, RequestHandlerClass)
-    self.manager = Manager(os.curdir + os.sep + "wines.sqlite3")
-    print("Server läuft auf Port %d" % server_address[1])
+class WineServer(HTTPServer):
+  def __init__(self, server_address, basedir):
+    HTTPServer.__init__(self, server_address, WineHandler)
+    self.manager = None
+    self.basedir = basedir
+    self.shutdown_done = threading.Event()
+
+  def Run(self):
+    db_file = os.path.join(self.basedir, "wines.sqlite3")
+    self.manager = Manager(db_file)
+    print("Server läuft auf Port %d" % self.server_address[1])
+    try:
+      self.serve_forever()
+    finally:
+      self.manager.Shutdown()
+      self.shutdown_done.set()
 
   def Shutdown(self):
-    print("Shutting down")
-    self.manager.Shutdown()
-    HTTPServer.shutdown(self)
-
-try:
-  server = Server(('', PORT_NUMBER), Handler)
-  server.serve_forever()
-except KeyboardInterrupt:
-  print('')
-  print('Server wird beendet.')
-  server.Shutdown()
-
+    self.shutdown()
+    self.shutdown_done.wait()

@@ -95,9 +95,10 @@ class Manager:
       self.AddWine("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
 
   def Shutdown(self):
-    print("Committing and closing DB connection")
+    print("Datenbank wird gespeichert")
     self._conn.commit()
     self._conn.close()
+    print("Datenbank erfolgreich gespeichert")
 
   def Log(self, wine, delta, reason):
     date = datetime.date.today().isoformat()
