@@ -1,5 +1,9 @@
 "use strict";
 
+// Allowed: default, count_{asc,desc}, price_{asc,desc}, rating_{asc,desc},
+// year_{asc,desc}, value_{asc,desc}, sweetness_{asc,desc}, age_{asc,desc}
+var g_viewmode = "default";
+
 function FormatPrice(double) {
   if (double === 0) return "";
   return double.toLocaleString(
@@ -22,20 +26,40 @@ function IsEditMode() {
   return document.getElementById("edit_mode").checked;
 }
 
-function GetRating(fieldset) {
-  var elements = fieldset.elements;
-  for (var i = 0; i < elements.length; i++) {
-    var input = elements.item(i);
-    if (input.checked) return input.value;
-  }
-  return 0;
+function ClickVineyardHeader() {
+  g_viewmode = "default";
+  PopulateList();
 }
 
-function ClearRating(fieldset) {
-  var elements = fieldset.elements;
-  for (var i = 0; i < elements.length; i++) {
-    elements.item(i).checked = false;
+function SetViewMode(primary, secondary) {
+  if (g_viewmode === primary) {
+    g_viewmode = secondary;
+  } else {
+    g_viewmode = primary;
   }
+  PopulateList();
+}
+
+function ClickYearHeader() {
+  SetViewMode("year_asc", "year_desc");
+}
+function ClickCountHeader() {
+  SetViewMode("count_desc", "count_asc");
+}
+function ClickPriceHeader() {
+  SetViewMode("price_asc", "price_desc");
+}
+function ClickRatingHeader() {
+  SetViewMode("rating_desc", "rating_asc");
+}
+function ClickValueHeader() {
+  SetViewMode("value_desc", "value_asc");
+}
+function ClickSweetnessHeader() {
+  SetViewMode("sweetness_desc", "sweetness_asc");
+}
+function ClickAgeHeader() {
+  SetViewMode("age_asc", "age_desc");
 }
 
 function ClickPlus(event) {
@@ -112,23 +136,27 @@ function ToggleEditMode() {
   PopulateList();
 }
 
-function ClickAddYear(event) {
-  var tr = event.target.parentNode.parentNode;
-  var wine_id = tr.wineid;
-  var vineyard_td = tr.firstChild;
-  var wine_td = vineyard_td.nextSibling;
+function CollectFields(wine_td, obj) {
   var year_td = wine_td.nextSibling;
   var count_td = year_td.nextSibling;
   var price_td = count_td.nextSibling;
   var comment_td = price_td.nextSibling;
   var year = year_td.firstChild.value;
-  var count = count_td.firstChild.value;
-  var price = ParsePrice(price_td.firstChild.value);
-  var comment = comment_td.firstChild.value;
-  var reason = ReasonAdd();
-  var only_existing = ShowOnlyExisting();
-  SendPost("add_year", PopulateList_Callback,
-           {wine_id, year, count, price, comment, reason, only_existing});
+  obj.count = count_td.firstChild.value;
+  obj.price = ParsePrice(price_td.firstChild.value);
+  obj.comment = comment_td.firstChild.value;
+  obj.reason = ReasonAdd();
+  obj.only_existing = ShowOnlyExisting();
+}
+
+function ClickAddYear(event) {
+  var tr = event.target.parentNode.parentNode;
+  var wine_id = tr.wineid;
+  var vineyard_td = tr.firstChild;
+  var wine_td = vineyard_td.nextSibling;
+  var options = {wine_id};
+  CollectFields(wine_td, options);
+  SendPost("add_year", PopulateList_Callback, options);
 }
 
 function ClickAddWine(event) {
@@ -136,20 +164,10 @@ function ClickAddWine(event) {
   var vineyard_id = tr.vineyard_id;
   var vineyard_td = tr.firstChild;
   var wine_td = vineyard_td.nextSibling;
-  var year_td = wine_td.nextSibling;
-  var count_td = year_td.nextSibling;
-  var price_td = count_td.nextSibling;
-  var comment_td = price_td.nextSibling;
   var wine = wine_td.firstChild.value;
-  var year = year_td.firstChild.value;
-  var count = count_td.firstChild.value;
-  var price = ParsePrice(price_td.firstChild.value);
-  var comment = comment_td.firstChild.value;
-  var reason = ReasonAdd();
-  var only_existing = ShowOnlyExisting();
-  SendPost(
-      "add_wine", PopulateList_Callback,
-      {vineyard_id, wine, year, count, price, comment, reason, only_existing});
+  var options = {vineyard_id, wine};
+  CollectFields(wine_td, options);
+  SendPost("add_wine", PopulateList_Callback, options);
 }
 
 function ClickRating(event) {
@@ -163,7 +181,131 @@ function ClickRating(event) {
 
 function PopulateList() {
   var only_existing = ShowOnlyExisting();
-  SendGet("get_all", PopulateList_Callback, {only_existing});
+  if (g_viewmode === "default") {
+    SendGet("get_all", PopulateList_Callback, {only_existing});
+  } else {
+    var sortby = g_viewmode;
+    SendGet("get_sorted", PopulateList_Sorted, {only_existing, sortby});
+  }
+}
+
+function MakeVineyardTd(name, vineyard_id, region) {
+  var td = document.createElement("td");
+  if (name) {
+    td.appendChild(document.createTextNode(name));
+    td.onclick = ShowVineyardEdit;
+    td.vineyard_id = vineyard_id;
+    td.setAttribute("class", "vineyard");
+    td.setAttribute("title", region);
+  }
+  return td;
+}
+
+function MakeWineTd(name, wine_id, grape) {
+  var td = document.createElement("td");
+  if (name) {
+    td.appendChild(document.createTextNode(name));
+    td.onclick = ShowWineEdit;
+    td.wine_id = wine_id;
+    td.setAttribute("class", "wine");
+    td.setAttribute("title", grape);
+  }
+  return td;
+}
+
+function MakeCountTd(count) {
+  var td = document.createElement("td");
+  td.appendChild(document.createTextNode(count));
+  var plus_button = document.createElement("button");
+  plus_button.appendChild(document.createTextNode("+"));
+  plus_button.onclick = ClickPlus;
+  plus_button.setAttribute("class", "plus");
+  td.appendChild(plus_button);
+  var minus_button = document.createElement("button");
+  minus_button.appendChild(document.createTextNode("–"));
+  minus_button.onclick = ClickMinus;
+  minus_button.setAttribute("class", "minus");
+  td.appendChild(minus_button);
+  return td;
+}
+
+function MakeButtonsTd() {
+  var td = document.createElement("td");
+  var button_edit = document.createElement("button");
+  button_edit.onclick = ClickEdit;
+  button_edit.appendChild(document.createTextNode("Bearbeiten"));
+  button_edit.setAttribute("class", "edit");
+  td.appendChild(button_edit);
+  return td;
+}
+
+function MakeRatingTd(wineid, current) {
+  var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
+  return MakeGenericRatingTd(labels, "rating", wineid, current);
+}
+
+function MakeValueTd(wineid, current) {
+  var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
+  return MakeGenericRatingTd(labels, "value", wineid, current);
+}
+
+function MakeSweetnessTd(wineid, current) {
+  var labels = ["Zuckersirup", "Süß", "feinherb", "trocken", "Zitrone"];
+  return MakeGenericRatingTd(labels, "sweetness", wineid, current);
+}
+
+function MakeGenericRatingTd(labels, radioname, id, current) {
+  var td = document.createElement("td");
+  var fieldset = document.createElement("fieldset");
+  fieldset.setAttribute("class", "rating");
+  var count = labels.length;
+  for (var i = 0; i < count; i++) {
+    var input = document.createElement("input");
+    var name = radioname + id;
+    var input_id = name + i;
+    input.id = input_id;
+    input.type = "radio";
+    input.name = name;
+    input.value = (count - i);
+    if (current === (count - i)) input.checked = true;
+    if (i === 0) input.setAttribute("class", "fivestar");
+    var label = document.createElement("label");
+    label.for = input_id;
+    label.title = labels[i];
+    label.onclick = ClickRating;
+    fieldset.appendChild(input);
+    fieldset.appendChild(label);
+  }
+  td.appendChild(fieldset);
+  return td;
+}
+
+function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
+  if (!edit_mode) return;
+  var tr = document.createElement("tr");
+  AppendTextTd(tr, "");  // Vineyard.
+  var callback;
+  if (what === "year") {
+    tr.wineid = parent_id;
+    callback = ClickAddYear;
+    AppendTextTd(tr, "");  // Wine.
+  } else {
+    tr.vineyard_id = parent_id;
+    callback = ClickAddWine;
+    AppendInputTd(tr, "neuer Wein");
+  }
+  AppendInputTd(tr, "Jahr", 4);
+  AppendInputTd(tr, "Anzahl", 8);
+  AppendInputTd(tr, "Preis", 4);
+  AppendInputTd(tr, "Kommentar");
+  var button_td = document.createElement("td");
+  var button_add = document.createElement("button");
+  button_add.appendChild(document.createTextNode("Hinzufügen"));
+  button_add.setAttribute("class", "add");
+  button_add.onclick = callback;
+  button_td.appendChild(button_add);
+  tr.appendChild(button_td);
+  winelist.appendChild(tr);
 }
 
 function PopulateList_Callback() {
@@ -187,121 +329,71 @@ function PopulateList_Callback() {
         tr.id = "wine_" + data.wineid;
         tr.wineid = data.wineid;
         // Vineyard.
-        var td_vineyard = document.createElement("td");
         if (first_wine) {
-          td_vineyard.appendChild(document.createTextNode(vineyard));
-          td_vineyard.onclick = ShowVineyardEdit;
-          td_vineyard.vineyard_id = vineyard_data.id;
-          td_vineyard.setAttribute("class", "vineyard");
-          td_vineyard.setAttribute("title", vineyard_data.region);
+          tr.appendChild(MakeVineyardTd(vineyard, vineyard_data.id, vineyard_data.region));
+        } else {
+          tr.appendChild(MakeVineyardTd(null, null, null));
         }
-        tr.appendChild(td_vineyard);
         // Wine.
         var td_wine = document.createElement("td");
         if (first_year) {
-          td_wine.appendChild(document.createTextNode(wine));
-          td_wine.onclick = ShowWineEdit;
-          td_wine.wine_id = wine_data.id;
-          td_wine.setAttribute("class", "wine");
-          td_wine.setAttribute("title", wine_data.grape);
+          tr.appendChild(MakeWineTd(wine, wine_data.id, wine_data.grape));
+        } else {
+          tr.appendChild(MakeWineTd(null, null, null));
         }
-        tr.appendChild(td_wine);
         // Year.
         AppendTextTd(tr, year);
         // Count.
-        var td_count = AppendTextTd(tr, data.count);
-        var plus_button = document.createElement("button");
-        plus_button.appendChild(document.createTextNode("+"));
-        plus_button.onclick = ClickPlus;
-        plus_button.setAttribute("class", "plus");
-        td_count.appendChild(plus_button);
-        var minus_button = document.createElement("button");
-        minus_button.appendChild(document.createTextNode("–"));
-        minus_button.onclick = ClickMinus;
-        minus_button.setAttribute("class", "minus");
-        td_count.appendChild(minus_button);
-        // Rating.
-        var td_rating = document.createElement("td");
-        var fieldset = document.createElement("fieldset");
-        fieldset.setAttribute("class", "rating");
-        var rating_titles = ["Herausragend", "Sehr gut", "Solide", "Mäßig",
-                             "Schlecht"];
-        for (var i = 0; i < 5; i++) {
-          var input = document.createElement("input");
-          var name = "rating" + data.wineid;
-          var input_id = name + i;
-          input.id = input_id;
-          input.type = "radio";
-          input.name = name;
-          input.value = (5 - i);
-          if (data.rating === (5 - i)) input.checked = true;
-          if (i === 0) input.setAttribute("class", "fivestar");
-          var label = document.createElement("label");
-          label.for = input_id;
-          label.title = rating_titles[i];
-          label.onclick = ClickRating;
-          fieldset.appendChild(input);
-          fieldset.appendChild(label);
-        }
-        td_rating.appendChild(fieldset);
-        tr.appendChild(td_rating);
+        tr.appendChild(MakeCountTd(data.count));
         // Price, comment.
         AppendTextTd(tr, FormatPrice(data.price));
         AppendTextTd(tr, data.comment);
         // Buttons.
-        var td_buttons = document.createElement("td");
-        var button_edit = document.createElement("button");
-        button_edit.onclick = ClickEdit;
-        button_edit.appendChild(document.createTextNode("Bearbeiten"));
-        button_edit.setAttribute("class", "edit");
-        td_buttons.appendChild(button_edit);
-        tr.appendChild(td_buttons);
+        tr.appendChild(MakeButtonsTd());
+        // Ratings.
+        tr.appendChild(MakeRatingTd(data.wineid, data.rating));
+        tr.appendChild(MakeValueTd(data.wineid, data.value));
+        tr.appendChild(MakeSweetnessTd(data.wineid, data.sweetness));
+
         winelist.appendChild(tr);
         first_wine = false;
         first_year = false;
       }  // for year in years
-      if (edit_mode) {
-        var tr = document.createElement("tr");
-        tr.wineid = wine_data.id;
-        AppendTextTd(tr, "");  // Vineyard.
-        AppendTextTd(tr, "");  // Wine.
-        AppendInputTd(tr, "neues Jahr", 4);
-        AppendInputTd(tr, "Anzahl", 8);
-        AppendTextTd(tr, "");  // TODO: rating?
-        AppendInputTd(tr, "Preis", 4);
-        AppendInputTd(tr, "Kommentar");
-        var button_td = document.createElement("td");
-        var button_add = document.createElement("button");
-        button_add.appendChild(document.createTextNode("Hinzufügen"));
-        button_add.setAttribute("class", "add");
-        button_add.onclick = ClickAddYear;
-        button_td.appendChild(button_add);
-        tr.appendChild(button_td);
-        winelist.appendChild(tr);
-      }  // edit_mode (years)
+      AppendEditModeRow(edit_mode, winelist, "year", wine_data.id);
     }  // for wine in wines
-    if (edit_mode) {
-      var tr = document.createElement("tr");
-      tr.vineyard_id = vineyard_data.id;
-      AppendTextTd(tr, "");  // Vineyard.
-      AppendInputTd(tr, "neuer Wein");
-      AppendInputTd(tr, "Jahr", 4);
-      AppendInputTd(tr, "Anzahl", 8);
-      AppendTextTd(tr, "");  // TODO: rating?
-      AppendInputTd(tr, "Preis", 4);
-      AppendInputTd(tr, "Kommentar");
-      var button_td = document.createElement("td");
-      var button_add = document.createElement("button");
-      button_add.appendChild(document.createTextNode("Hinzufügen"));
-      button_add.setAttribute("class", "add");
-      button_add.onclick = ClickAddWine;
-      button_td.appendChild(button_add);
-      tr.appendChild(button_td);
-      winelist.appendChild(tr);
-    }  // edit_mode (wines)
+    AppendEditModeRow(edit_mode, winelist, "wine", vineyard_data.id);
   }
   PopulateVineyards();
   PopulateLog();
+}
+
+function PopulateList_Sorted() {
+  var winelist = document.getElementById("winelist");
+  DropAllChildren(winelist);
+  var response = JSON.parse(decodeURIComponent(this.responseText));
+  for (var wine of response) {
+    var tr = document.createElement("tr");
+    tr.id = "wine_" + wine.wineid;
+    tr.wineid = wine.wineid;
+    // Vineyard.
+    tr.appendChild(MakeVineyardTd(wine.vineyard_name, wine.vineyard_id,
+                                  wine.region));
+    // Wine.
+    tr.appendChild(MakeWineTd(wine.wine_name, wine.wine_id, wine.grape));
+    // Year.
+    AppendTextTd(tr, wine.year);
+    // Count, price, comment.
+    tr.appendChild(MakeCountTd(wine.count));
+    AppendTextTd(tr, FormatPrice(wine.price));
+    AppendTextTd(tr, wine.comment);
+    // Buttons.
+    tr.appendChild(MakeButtonsTd());
+    // Ratings.
+    tr.appendChild(MakeRatingTd(wine.wineid, wine.rating));
+    tr.appendChild(MakeValueTd(wine.wineid, wine.value));
+    tr.appendChild(MakeSweetnessTd(wine.wineid, wine.sweetness));
+    winelist.append(tr);
+  }
 }
 
 function AddWine() {
@@ -309,7 +401,6 @@ function AddWine() {
   var wine_input = document.getElementById("add_wine");
   var year_input = document.getElementById("add_year");
   var count_input = document.getElementById("add_count");
-  var rating_fieldset = document.getElementById("add_rating");
   var price_input = document.getElementById("add_price");
   var comment_input = document.getElementById("add_comment");
   var data = {
@@ -317,7 +408,6 @@ function AddWine() {
     wine: wine_input.value,
     year: year_input.value,
     count: count_input.value,
-    rating: GetRating(rating_fieldset),
     price: ParsePrice(price_input.value),
     comment: comment_input.value,
     reason: ReasonAdd(),

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS years (
   count INTEGER,
   price INTEGER,
   rating REAL DEFAULT 0,
+  value REAL DEFAULT 0,
   sweetness REAL DEFAULT 0,
   age INTEGER DEFAULT 0,
   comment TEXT
@@ -68,6 +69,7 @@ KNOWN_GRAPES = [
 ]
 
 GRAPE_GUESSES = {
+  "Cabernet Sauvignon": "Cabernet Sauvignon",
   "Grauer Burgunder": "Grauburgunder",
   "Klingelberg": "Riesling",
   "Klingelberger": "Riesling",
@@ -80,12 +82,22 @@ class Manager:
     self._conn = conn
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
+    # Set current user_version if fresh tables will be created.
+    existing = c.execute("""
+        SELECT count(*) FROM sqlite_master WHERE type='table'
+        AND name='years' OR name='vineyards' OR name='wines' OR name='log'
+        """).fetchone()[0]
+    if existing != 4:
+      c.execute("PRAGMA user_version = 1")
+    # Make sure tables exist.
     c.execute(CREATE_VINEYARDS)
     c.execute(CREATE_WINES)
     c.execute(CREATE_YEARS)
     c.execute(CREATE_LOG)
     conn.commit()
+    self.ApplyDatabaseUpdates()
     # TODO: create index?
+    # TODO: vacuum?
     # TODO: temporary implementation:
     if filename == ":memory:":
       self.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
@@ -99,6 +111,14 @@ class Manager:
     self._conn.commit()
     self._conn.close()
     print("Datenbank erfolgreich gespeichert")
+
+  def ApplyDatabaseUpdates(self):
+    version = self._conn.execute("PRAGMA user_version").fetchone()[0]
+    if version < 1:
+      print("Updating database version 0->1...")
+      self._conn.execute("ALTER TABLE years ADD COLUMN value REAL DEFAULT 0")
+      self._conn.execute("PRAGMA user_version = 1")
+      self._conn.commit()
 
   def Log(self, wine, delta, reason):
     date = datetime.date.today().isoformat()
@@ -260,10 +280,56 @@ class Manager:
           years[year_row["year"]] = {
             "wineid": year_row["id"],
             "count": year_row["count"],
-            "rating": year_row["rating"],
             "price": year_row["price"],
+            "rating": year_row["rating"],
+            "value": year_row["value"],
+            "sweetness": year_row["sweetness"],
+            "age": year_row["age"],
             "comment": year_row["comment"]
           }
+    return result
+
+  def GetSortKey(self, sortby):
+    w = sortby.split("_")
+    sortby = w[0]
+    if sortby not in ("count", "price", "rating", "year", "value", "sweetness",
+                      "age"): sortby = "price"
+    direction = w[1]
+    if direction not in ("asc", "desc"): direction = "asc"
+    return "%s %s" % (sortby, direction)
+
+  def GetSorted(self, only_existing, sortby):
+    result = []
+    sortby = self.GetSortKey(sortby)
+    c = self._conn.execute("""
+      SELECT years.id as wineid, years.year as year, years.count as count,
+             years.price as price, years.rating as rating, years.value as value,
+             years.sweetness as sweetness, years.age as age,
+             years.comment as comment, wines.id as wine_id,
+             wines.name as wine_name, wines.grape as grape,
+             vineyards.id as vineyard_id, vineyards.name as vineyard_name,
+             vineyards.region as region
+      FROM years
+      INNER JOIN wines ON years.wine = wines.id
+      INNER JOIN vineyards ON wines.vineyard = vineyards.id
+      ORDER BY %s""" % sortby)
+    for r in c:
+      result.append({
+        "wineid": r["wineid"],
+        "year": r["year"],
+        "count": r["count"],
+        "price": r["price"],
+        "rating": r["rating"],
+        "value": r["value"],
+        "sweetness": r["sweetness"],
+        "age": r["age"],
+        "comment": r["comment"],
+        "wine_id": r["wine_id"],
+        "wine_name": r["wine_name"],
+        "grape": r["grape"],
+        "vineyard_id": r["vineyard_id"],
+        "vineyard_name": r["vineyard_name"],
+        "region": r["region"]})
     return result
 
   def GetVineyards(self):
@@ -352,13 +418,20 @@ class Manager:
 
 if __name__ == '__main__':
   m = Manager(":memory:")
-  m.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "")
-  m.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "")
-  m.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "")
-  m.AddOneBottle(1)
-  c = m._conn.execute('select * from years')
+  m.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
+  m.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
+  m.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
+  m.AddOneBottle(1, 2)
+  #c = m._conn.execute('select * from years')
+  c = m._conn.execute("PRAGMA user_version")
+  version = c.fetchone()[0]
+  print(version)
+  if (version == 0):
+    print("Updating version 0->1")
+    m._conn.execute("""ALTER TABLE years ADD COLUMN value REAL DEFAULT 0""")
+    m._conn.execute("""PRAGMA user_version = 1""")
+  version = m._conn.execute("PRAGMA user_version").fetchone()[0]
+  print(version)
   #print(c.fetchall())
-  #for row in c:
-  #  print(row)
-  print(m.GetAll())
+  #print(m.GetAll())
   m.Shutdown()

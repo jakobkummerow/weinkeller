@@ -57,6 +57,11 @@ class WineHandler(BaseHTTPRequestHandler):
       only_existing = query["only_existing"][0]
       self._send_json(self._server.manager.GetAll(only_existing))
 
+    elif path == "/get_sorted":
+      only_existing = query["only_existing"][0]
+      sortby = query["sortby"][0]
+      self._send_json(self._server.manager.GetSorted(only_existing, sortby))
+
     elif path == "/get_vineyards":
       self._send_json(self._server.manager.GetVineyards())
 
