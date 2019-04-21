@@ -157,6 +157,11 @@ class WineHandler(BaseHTTPRequestHandler):
       updated = self._server.manager.RemoveOneBottle(wineid, reason)
       self._send_json({"wineid": wineid, "count": updated})
 
+    elif self.path == "/delete_year":
+      wineid = self._get_post_data("wineid")
+      self._server.manager.DeleteYear(wineid)
+      self._send_json({"status": "ok"})
+
     elif self.path == "/update":
       wineid = self._get_post_data("wineid")
       price = self._get_optional("price", 0)
@@ -166,8 +171,10 @@ class WineHandler(BaseHTTPRequestHandler):
 
     elif self.path == "/update_rating":
       wineid = self._get_post_data("wineid")
-      rating = self._get_post_data("rating")
-      self._server.manager.UpdateRating(wineid, rating)
+      what = self._get_post_data("what")
+      if what not in ("rating", "value", "sweetness"): return
+      val = self._get_post_data("val")
+      self._server.manager.UpdateRating(wineid, what, val)
       self._send_json({"status": "ok"})
 
     elif self.path == "/set_vineyard":

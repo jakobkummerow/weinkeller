@@ -194,7 +194,7 @@ class Manager:
   def _GetOrCreateWine(self, vineyard_id, wine):
     r = self._GetWine(vineyard_id, wine)
     if r is None:
-      r = self._CreateWine(wineyard_id, wine)
+      r = self._CreateWine(vineyard_id, wine)
     return r
 
   def AddYear(self, wine_id, year, count, rating, price, comment, reason):
@@ -247,14 +247,18 @@ class Manager:
     self._conn.commit()
     return self._GetCurrentCount(wine_id)
 
+  def DeleteYear(self, wineid):
+    self._conn.execute("DELETE FROM years WHERE id=?", (wineid,))
+    self._conn.commit()
+
   def Update(self, wine_id, price, comment):
     self._conn.execute("UPDATE years SET price=?, comment=? WHERE id=?",
                        (price, comment, wine_id))
     self._conn.commit()
 
-  def UpdateRating(self, wine_id, rating):
-    self._conn.execute("UPDATE years SET rating=? WHERE id=?",
-                       (rating, wine_id))
+  def UpdateRating(self, yearid, what, val):
+    self._conn.execute("UPDATE years SET %s=? WHERE id=?" % what,
+                       (val, yearid))
     self._conn.commit()
 
   def GetAll(self, only_existing):

@@ -74,6 +74,14 @@ function ClickMinus(event) {
   SendPost("remove_bottle", ClickPlus_Callback, {wineid, reason});
 }
 
+function ClickDelete(event) {
+  var wineid = event.target.parentElement.parentElement.wineid;
+  if (!confirm("Diesen Wein (samt Preis, Kommentar, Bewertung) löschen?")) {
+    return;
+  }
+  SendPost("delete_year", PopulateList, {wineid});
+}
+
 function ClickPlus_Callback() {
   var response = decodeURIComponent(this.responseText);
   document.getElementById("output").innerHTML = response;
@@ -141,7 +149,7 @@ function CollectFields(wine_td, obj) {
   var count_td = year_td.nextSibling;
   var price_td = count_td.nextSibling;
   var comment_td = price_td.nextSibling;
-  var year = year_td.firstChild.value;
+  obj.year = year_td.firstChild.value;
   obj.count = count_td.firstChild.value;
   obj.price = ParsePrice(price_td.firstChild.value);
   obj.comment = comment_td.firstChild.value;
@@ -171,12 +179,22 @@ function ClickAddWine(event) {
 }
 
 function ClickRating(event) {
+  return ClickRatingGeneric(event, "rating");
+}
+function ClickValue(event) {
+  return ClickRatingGeneric(event, "value");
+}
+function ClickSweetness(event) {
+  return ClickRatingGeneric(event, "sweetness");
+}
+function ClickRatingGeneric(event, what) {
   var input = event.target.previousSibling;
   input.checked = true;
-  var rating = input.value;
+  var val = input.value;
+  // label -> fieldset -> td -> tr
   var tr = event.target.parentNode.parentNode.parentNode;
   var wineid = tr.wineid;
-  SendPost("update_rating", null, {wineid, rating});
+  SendPost("update_rating", null, {wineid, what, val});
 }
 
 function PopulateList() {
@@ -222,8 +240,15 @@ function MakeCountTd(count) {
   plus_button.setAttribute("class", "plus");
   td.appendChild(plus_button);
   var minus_button = document.createElement("button");
-  minus_button.appendChild(document.createTextNode("–"));
-  minus_button.onclick = ClickMinus;
+  var label;
+  if (count > 0) {
+    label = "–";
+    minus_button.onclick = ClickMinus;
+  } else {
+    label = "Lö";
+    minus_button.onclick = ClickDelete;
+  }
+  minus_button.appendChild(document.createTextNode(label));
   minus_button.setAttribute("class", "minus");
   td.appendChild(minus_button);
   return td;
@@ -241,20 +266,21 @@ function MakeButtonsTd() {
 
 function MakeRatingTd(wineid, current) {
   var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
-  return MakeGenericRatingTd(labels, "rating", wineid, current);
+  return MakeGenericRatingTd(labels, "rating", ClickRating, wineid, current);
 }
 
 function MakeValueTd(wineid, current) {
   var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
-  return MakeGenericRatingTd(labels, "value", wineid, current);
+  return MakeGenericRatingTd(labels, "value", ClickValue, wineid, current);
 }
 
 function MakeSweetnessTd(wineid, current) {
   var labels = ["Zuckersirup", "Süß", "feinherb", "trocken", "Zitrone"];
-  return MakeGenericRatingTd(labels, "sweetness", wineid, current);
+  return MakeGenericRatingTd(labels, "sweetness", ClickSweetness, wineid,
+                             current);
 }
 
-function MakeGenericRatingTd(labels, radioname, id, current) {
+function MakeGenericRatingTd(labels, radioname, callback, id, current) {
   var td = document.createElement("td");
   var fieldset = document.createElement("fieldset");
   fieldset.setAttribute("class", "rating");
@@ -272,7 +298,7 @@ function MakeGenericRatingTd(labels, radioname, id, current) {
     var label = document.createElement("label");
     label.for = input_id;
     label.title = labels[i];
-    label.onclick = ClickRating;
+    label.onclick = callback;
     fieldset.appendChild(input);
     fieldset.appendChild(label);
   }
