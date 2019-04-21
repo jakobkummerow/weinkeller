@@ -17,16 +17,6 @@ function FormatAge(int) {
   return kAges[int];
 }
 
-function FormatPrice(double) {
-  if (double === 0) return "";
-  return double.toLocaleString(
-      "de", {minimumFractionDigits: 2, maximumFractionDigits: 2})
-}
-
-function ParsePrice(string) {
-  return string.replace(",", ".");
-}
-
 function ShowOnlyExisting() {
   return document.getElementById("show_only_existing").checked ? 1 : 0;
 }
@@ -100,9 +90,11 @@ function ClickPlus_Callback() {
   document.getElementById("output").innerHTML = response;
   var update = JSON.parse(response);
   var tr = document.getElementById("wine_" + update.wineid);
+  // vineyard -> wine -> year -> count
   var td = tr.firstChild.nextSibling.nextSibling.nextSibling;
   td.replaceChild(document.createTextNode(update.count), td.firstChild);
   PopulateLog();
+  UpdateTotals();
 }
 
 function ClickEdit(event) {
@@ -442,6 +434,7 @@ function PopulateList_Callback() {
   }
   PopulateVineyards();
   PopulateLog();
+  UpdateTotals();
 }
 
 function PopulateList_Sorted() {
@@ -532,4 +525,19 @@ function PopulateWines_Callback() {
   var response = decodeURIComponent(this.responseText);
   document.getElementById("output").innerHTML = response;
   PopulateDataList(wines_list, JSON.parse(response));
+}
+
+function UpdateTotals() {
+  SendGet("get_totals", UpdateTotals_Callback);
+}
+
+function UpdateTotals_Callback() {
+  var response = decodeURIComponent(this.responseText);
+  document.getElementById("output").innerHTML = response;
+  var data = JSON.parse(response);
+  var count = document.getElementById("total_count");
+  count.replaceChild(document.createTextNode(data.count), count.firstChild);
+  var price = document.getElementById("total_price");
+  price.replaceChild(document.createTextNode(FormatPrice(data.price)),
+                     price.firstChild);
 }

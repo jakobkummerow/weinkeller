@@ -97,6 +97,13 @@ function start() {
     <button class="add" onclick="AddWine()">Hinzufügen</button>
   </td>
 </tr>
+<tr>
+  <td>Insgesamt:</td>
+  <td><!--wine--></td>
+  <td><!--year--></td>
+  <td id="total_count"> </td>
+  <td id="total_price"> </td>
+</tr>
 </tfoot>
 </table>
 
@@ -116,6 +123,14 @@ function start() {
   <div id="vineyard_edit_container" class="edit_container">
     <h2 id="vineyard_edit_title"> </h2>
     <table class="edit_table">
+      <tr>
+        <td class="label">Bestand (Flaschen):</td>
+        <td id="vineyard_edit_total_count"> <!-- must keep this space--></td>
+      </tr>
+      <tr>
+        <td class="label">Bestand (Preis):</td>
+        <td id="vineyard_edit_total_price"> <!-- must keep this space--></td>
+      </tr>
       <tr>
         <td class="label">Land:</td>
         <td id="vineyard_edit_country"> <!-- must keep this space -->

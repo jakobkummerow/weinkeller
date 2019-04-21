@@ -68,3 +68,13 @@ function ReplaceInputWithText(parent, restore_previous = false) {
   parent.replaceChild(text, input);
   return value;
 }
+
+function FormatPrice(double) {
+  if (double === 0) return "";
+  return double.toLocaleString(
+      "de", {minimumFractionDigits: 2, maximumFractionDigits: 2})
+}
+
+function ParsePrice(string) {
+  return string.replace(",", ".");
+}

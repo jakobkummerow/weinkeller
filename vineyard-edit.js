@@ -34,6 +34,12 @@ var g_VineyardEdit = (function() {
   function Comment() {
     return document.getElementById("vineyard_edit_comment");
   }
+  function TotalCount() {
+    return document.getElementById("vineyard_edit_total_count");
+  }
+  function TotalPrice() {
+    return document.getElementById("vineyard_edit_total_price");
+  }
 
   function set_text(node, text) {
     node.replaceChild(document.createTextNode(text), node.firstChild);
@@ -144,6 +150,8 @@ var g_VineyardEdit = (function() {
       var mapslink = Maps();
       mapslink.href = "https://www.google.de/maps/search/Weingut+" +
                       encodeURIComponent(data.vineyard);
+      set_text(TotalCount(), data.total_count);
+      set_text(TotalPrice(), FormatPrice(data.total_price));
     },
   };
 })();

@@ -90,6 +90,9 @@ class WineHandler(BaseHTTPRequestHandler):
     elif path == "/grapes":
       self._send_json(self._server.manager.GetGrapes())
 
+    elif path == "/get_totals":
+      self._send_json(self._server.manager.GetTotals())
+
   def _get_post_data(self, option):
     return self._post_data[option][0]
 

@@ -355,6 +355,16 @@ class Manager:
     return result
 
   def GetVineyardData(self, vineyard_id):
+    c = self._conn.execute("""
+        SELECT SUM(years.count) AS count,
+               SUM(years.count * years.price) AS price
+        FROM years
+        JOIN wines ON years.wine = wines.id
+        JOIN vineyards ON wines.vineyard = vineyards.id
+        WHERE vineyards.id=?""", (vineyard_id,))
+    r = c.fetchone()
+    total_count = r["count"]
+    total_price = r["price"]
     c = self._conn.execute("SELECT * FROM vineyards WHERE id=?", (vineyard_id,))
     r = c.fetchone()
     return {"id": r["id"],
@@ -363,7 +373,9 @@ class Manager:
             "region": r["region"],
             "address": r["address"],
             "website": r["website"],
-            "comment": r["comment"]}
+            "comment": r["comment"],
+            "total_count": total_count,
+            "total_price": total_price}
 
   def SetVineyardData(self, vineyard_id, country, region, address, website,
                       comment):
@@ -419,6 +431,12 @@ class Manager:
     self._conn.execute("UPDATE wines SET name=?, grape=?, comment=? WHERE id=?",
                        (name, grape, comment, wine_id))
     self._conn.commit()
+
+  def GetTotals(self):
+    c = self._conn.execute("""
+        SELECT SUM(count) AS count, SUM(count * price) AS price FROM years""")
+    r = c.fetchone()
+    return {"count": r["count"], "price": r["price"]}
 
 if __name__ == '__main__':
   m = Manager(":memory:")
