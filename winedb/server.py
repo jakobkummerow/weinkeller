@@ -172,10 +172,10 @@ class WineHandler(BaseHTTPRequestHandler):
     elif self.path == "/update_rating":
       wineid = self._get_post_data("wineid")
       what = self._get_post_data("what")
-      if what not in ("rating", "value", "sweetness"): return
+      if what not in ("rating", "value", "sweetness", "age"): return
       val = self._get_post_data("val")
       self._server.manager.UpdateRating(wineid, what, val)
-      self._send_json({"status": "ok"})
+      self._send_json({"yearid": wineid, what: val})
 
     elif self.path == "/set_vineyard":
       vineyard_id = self._get_post_data("vineyard_id")

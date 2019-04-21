@@ -4,6 +4,19 @@
 // year_{asc,desc}, value_{asc,desc}, sweetness_{asc,desc}, age_{asc,desc}
 var g_viewmode = "default";
 
+var kAges = {
+  0: "unbekannt",
+  1: "zu jung",
+  2: "wird noch besser",
+  3: "genau richtig",
+  4: "muss getrunken werden",
+  5: "zu alt",
+}
+
+function FormatAge(int) {
+  return kAges[int];
+}
+
 function FormatPrice(double) {
   if (double === 0) return "";
   return double.toLocaleString(
@@ -197,6 +210,26 @@ function ClickRatingGeneric(event, what) {
   SendPost("update_rating", null, {wineid, what, val});
 }
 
+function ClickAge(event) {
+  var select = event.target;
+  var td = select.parentElement;
+  var tr = td.parentElement;
+  if (td !== tr.lastChild) console.log("Error: age must be last child of tr");
+  var wineid = tr.wineid;
+  var val = select.value;
+  var what = "age";
+  SendPost("update_rating", AgeChange_Callback, {wineid, what, val});
+}
+
+function AgeChange_Callback() {
+  var response = decodeURIComponent(this.responseText);
+  document.getElementById("output").innerHTML = response;
+  var data = JSON.parse(response);
+  var tr = document.getElementById("wine_" + data.yearid);
+  var td = tr.lastChild;
+  td.replaceChild(document.createTextNode(FormatAge(data.age)), td.firstChild);
+}
+
 function PopulateList() {
   var only_existing = ShowOnlyExisting();
   if (g_viewmode === "default") {
@@ -306,6 +339,23 @@ function MakeGenericRatingTd(labels, radioname, callback, id, current) {
   return td;
 }
 
+function MakeAgeTd(current) {
+  var td = document.createElement("td");
+  td.appendChild(document.createTextNode(FormatAge(current)));
+  var age_select = document.createElement("select");
+  age_select.setAttribute("class", "reason");
+  age_select.onchange = ClickAge;
+  for (var i in kAges) {
+    var option = document.createElement("option");
+    option.value = i;
+    option.appendChild(document.createTextNode(FormatAge(i)));
+    if (i == current) option.setAttribute("selected", true);
+    age_select.appendChild(option);
+  }
+  td.appendChild(age_select);
+  return td;
+}
+
 function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
   if (!edit_mode) return;
   var tr = document.createElement("tr");
@@ -380,6 +430,7 @@ function PopulateList_Callback() {
         tr.appendChild(MakeRatingTd(data.wineid, data.rating));
         tr.appendChild(MakeValueTd(data.wineid, data.value));
         tr.appendChild(MakeSweetnessTd(data.wineid, data.sweetness));
+        tr.appendChild(MakeAgeTd(data.age));
 
         winelist.appendChild(tr);
         first_wine = false;
@@ -418,6 +469,7 @@ function PopulateList_Sorted() {
     tr.appendChild(MakeRatingTd(wine.wineid, wine.rating));
     tr.appendChild(MakeValueTd(wine.wineid, wine.value));
     tr.appendChild(MakeSweetnessTd(wine.wineid, wine.sweetness));
+    tr.appendChild(MakeAgeTd(wine.age));
     winelist.append(tr);
   }
 }

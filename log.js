@@ -51,13 +51,8 @@ function PopulateLog_Callback() {
     AppendTextTd(tr, d.date);
     AppendTextTd(tr, d.wine);
     AppendTextTd(tr, d.delta);
-    /*var td_reason = AppendTextTd(tr, FormatReason(d.reason) + " ");
-    var button = document.createElement("button");
-    button.onclick = ClickLogEdit;
     // pencil: \u270F
     // notepad: \u{1F4DD}
-    button.appendChild(document.createTextNode("\u{1F4DD}"));
-    td_reason.appendChild(button);*/
     var td_reason = document.createElement("td");
     td_reason.id = "log_reason_" + d.log_id;
     td_reason.appendChild(document.createTextNode(FormatReason(d.reason)));
@@ -78,10 +73,6 @@ function PopulateLog_Callback() {
     log.appendChild(tr);
   }
 }
-
-/*function ClickLogEdit() {
-
-}*/
 
 function PopulateDefaultReasons() {
   var add_list = document.getElementById("default_reason_add");
