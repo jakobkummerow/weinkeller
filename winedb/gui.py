@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import webbrowser
 
 import PyQt5.QtWidgets as qt
@@ -32,7 +33,9 @@ class Window(qt.QMainWindow):
 
     mainpart.setLayout(layout)
 
-    self.setWindowIcon(qtgui.QIcon("/home/jkummerow/wine/favicon.ico"))
+    basedir = os.path.dirname(os.path.abspath(__file__))
+    icon = os.path.join(os.path.dirname(basedir), "favicon.ico")
+    self.setWindowIcon(qtgui.QIcon(icon))
     self.show()
 
 def ShowWindow(status):
