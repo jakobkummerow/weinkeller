@@ -126,7 +126,7 @@ function ClickSave(event) {
 }
 
 function ClickSaveButton(button, actually_save) {
-  button.replaceChild(document.createTextNode("Bearbeiten"), button.firstChild);
+  button.replaceChild(document.createTextNode("\u270E"), button.firstChild);
   button.onclick = ClickEdit;
   var wineid = button.parentElement.parentElement.wineid;
   var td_comment = button.parentElement.previousSibling;
