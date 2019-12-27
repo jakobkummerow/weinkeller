@@ -100,11 +100,12 @@ class Manager:
     # TODO: vacuum?
     # TODO: temporary implementation:
     if filename == ":memory:":
-      self.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
-      self.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
-      self.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
-      self.AddWine("Zipf", "Inka", 2012, 1, 3, 14.90, "", 2)
-      self.AddWine("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
+      # AddAll(self, vineyard, wine, year, count, rating, price, comment, reason)
+      self.AddAll("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
+      self.AddAll("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
+      self.AddAll("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
+      self.AddAll("Zipf", "Inka", 2012, 1, 3, 14.90, "", 2)
+      self.AddAll("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
 
   def Shutdown(self):
     print("Datenbank wird gespeichert")
@@ -210,7 +211,7 @@ class Manager:
   def AddWine(self, vineyard_id, wine, year, count, rating, price, comment,
               reason):
     grape = self._GuessGrapeForWine(wine)
-    r = self._CreateWine(vineyard_id, wine)
+    r = self._GetOrCreateWine(vineyard_id, wine)
     wine_id = r["id"]
     self.AddYear(wine_id, year, count, rating, price, comment, reason)
 

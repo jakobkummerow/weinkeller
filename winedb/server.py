@@ -94,11 +94,11 @@ class WineHandler(BaseHTTPRequestHandler):
       self._send_json(self._server.manager.GetTotals())
 
   def _get_post_data(self, option):
-    return self._post_data[option][0]
+    return self._post_data[option][0].strip()
 
   def _get_optional(self, option, default):
     if option in self._post_data:
-      return self._post_data[option][0]
+      return self._post_data[option][0].strip()
     return default
 
   def do_POST(self):
