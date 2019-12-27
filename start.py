@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import socket
 import threading
 
 from winedb.gui import ShowWindow
@@ -14,7 +15,8 @@ if __name__ == "__main__":
   server_thread = threading.Thread(target=server.Run)
   server_thread.daemon = True
   server_thread.start()
-  address = "http://localhost:%d" % PORT_NUMBER
+  ip = socket.gethostbyname(socket.gethostname())
+  address = "http://%s:%d" % (ip, PORT_NUMBER)
   ShowWindow(address)
   print("Server wird beendet")
   server.Shutdown()
