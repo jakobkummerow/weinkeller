@@ -12,7 +12,7 @@ class Window(qt.QMainWindow):
     self.statusBar().showMessage("Server läuft auf %s" % address)
 
     self.setWindowTitle("WineDB Server")
-    self.resize(250, 120)
+    self.resize(280, 120)
 
     mainpart = qt.QWidget()
     self.setCentralWidget(mainpart)

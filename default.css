@@ -76,7 +76,7 @@ table.winelist > tbody > tr {
 }
 
 table.winelist > tbody > tr > td {
-  max-width: 500px;
+  max-width: 300px;
   padding: 3px;
 }
 

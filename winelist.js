@@ -9,7 +9,7 @@ var kAges = {
   1: "zu jung",
   2: "wird noch besser",
   3: "genau richtig",
-  4: "muss getrunken werden",
+  4: "muss weg",
   5: "zu alt",
 }
 
@@ -283,7 +283,7 @@ function MakeButtonsTd() {
   var td = document.createElement("td");
   var button_edit = document.createElement("button");
   button_edit.onclick = ClickEdit;
-  button_edit.appendChild(document.createTextNode("Bearbeiten"));
+  button_edit.appendChild(document.createTextNode("\u270E"));
   button_edit.setAttribute("class", "edit");
   td.appendChild(button_edit);
   return td;
@@ -300,7 +300,7 @@ function MakeValueTd(wineid, current) {
 }
 
 function MakeSweetnessTd(wineid, current) {
-  var labels = ["Zuckersirup", "Süß", "feinherb", "trocken", "Zitrone"];
+  var labels = ["Dessertwein", "feinherb", "fruchtig", "trocken", "sauer"];
   return MakeGenericRatingTd(labels, "sweetness", ClickSweetness, wineid,
                              current);
 }
@@ -368,7 +368,7 @@ function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
   AppendInputTd(tr, "Kommentar");
   var button_td = document.createElement("td");
   var button_add = document.createElement("button");
-  button_add.appendChild(document.createTextNode("Hinzufügen"));
+  button_add.appendChild(document.createTextNode("\u2713"));
   button_add.setAttribute("class", "add");
   button_add.onclick = callback;
   button_td.appendChild(button_add);
@@ -391,7 +391,9 @@ function PopulateList_Callback() {
       var first_year = true;
       var wine_data = wines[wine];
       var years = wine_data.years;
+      var have_at_least_one_year = false;
       for (var year in years) {
+        have_at_least_one_year = true;
         var data = years[year];
         var tr = document.createElement("tr");
         tr.id = "wine_" + data.wineid;
@@ -428,7 +430,9 @@ function PopulateList_Callback() {
         first_wine = false;
         first_year = false;
       }  // for year in years
-      AppendEditModeRow(edit_mode, winelist, "year", wine_data.id);
+      if (have_at_least_one_year) {
+        AppendEditModeRow(edit_mode, winelist, "year", wine_data.id);
+      }
     }  // for wine in wines
     AppendEditModeRow(edit_mode, winelist, "wine", vineyard_data.id);
   }
