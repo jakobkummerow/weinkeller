@@ -18,6 +18,7 @@ function start() {
   document.getElementById("stock_mode").onchange = ToggleStockMode;
   document.getElementById("show_only_existing").onchange = ToggleShowExisting;
   document.getElementById("add_vineyard").onchange = PopulateWines;
+  document.getElementById("log_count").onchange = PopulateLog;
   document.getElementById("stock_reset_all").onclick = ClickResetAllStock;
   document.getElementById("stock_apply_all").onclick = ClickApplyAll;
   g_VineyardEdit.Init();
@@ -114,7 +115,14 @@ function start() {
   <span id="stock_apply_all" class="setting">Inventur: alle übernehmen</span>
 </p>
 
-<p>Letzte Änderungen:</p>
+<p>Letzte 
+  <select id="log_count">
+    <option value="10" selected>10</option>
+    <option value="20">20</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+  </select>
+  Änderungen:</p>
 <table class="winelist">
   <thead>
     <tr><td>Datum</td><td>Wein</td><td>Anzahl</td><td>Grund</td></tr>

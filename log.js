@@ -15,7 +15,8 @@ function FormatReason(int) {
 }
 
 function PopulateLog() {
-  SendGet("get_log", PopulateLog_Callback);
+  var count = document.getElementById("log_count").value;
+  SendGet("get_log", PopulateLog_Callback, {count});
 }
 
 function IsValidReasonFor(reason, delta) {

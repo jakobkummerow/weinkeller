@@ -70,7 +70,8 @@ class WineHandler(BaseHTTPRequestHandler):
       self._send_json(wines)
 
     elif path =="/get_log":
-      self._send_json(self._server.manager.GetLog(10))
+      count = query["count"][0]
+      self._send_json(self._server.manager.GetLog(count))
 
     elif path == "/vineyard_data":
       vineyard = query["vineyard"][0]
