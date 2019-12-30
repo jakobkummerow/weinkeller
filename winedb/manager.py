@@ -1,4 +1,6 @@
+import csv
 import datetime
+import io
 import sqlite3
 
 CREATE_VINEYARDS = """
@@ -513,19 +515,39 @@ class Manager:
     r = c.fetchone()
     return {"count": r["count"], "price": r["price"]}
 
+  def _FormatRating(self, rating):
+    rating = int(rating)
+    return "\u2605" * rating + "\u2606" * (5 - rating)
+
+  def _FormatAge(self, age):
+    return ["unbekannt", "zu jung", "wird noch besser", "genau richtig",
+            "muss weg", "zu alt"][age]
+
+  def ExportCSV(self):
+    c = self._conn.execute("""
+      SELECT years.year as year, years.count as count,
+             years.price as price, years.rating as rating, years.value as value,
+             years.sweetness as sweetness, years.age as age,
+             years.comment as comment, wines.name as wine_name,
+             vineyards.name as vineyard_name
+      FROM years
+      INNER JOIN wines ON years.wine = wines.id
+      INNER JOIN vineyards ON wines.vineyard = vineyards.id
+      ORDER BY vineyard_name ASC, wine_name ASC, year ASC""")
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Weingut", "Wein", "Jahr", "Anzahl", "Preis", "Kommentar",
+                     "Bewertung", "Preis/Leist", "Süße", "Alter"])
+    for r in c:
+      row = [r["vineyard_name"], r["wine_name"], r["year"], r["count"],
+             r["price"], r["comment"], self._FormatRating(r["rating"]),
+             self._FormatRating(r["value"]), self._FormatRating(r["sweetness"]),
+             self._FormatAge(r["age"])]
+      writer.writerow(row)
+    return output.getvalue()
+
 if __name__ == '__main__':
   m = Manager(":memory:")
-  m.AddWine("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
-  m.AddWine("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
-  m.AddWine("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
-  m.AddOneBottle(1, 2)
-  #c = m._conn.execute('select * from years')
-  c = m._conn.execute("PRAGMA user_version")
-  version = c.fetchone()[0]
-  print(version)
-  m.ApplyDatabaseUpdates()
-  version = m._conn.execute("PRAGMA user_version").fetchone()[0]
-  print(version)
-  #print(c.fetchall())
-  #print(m.GetAll())
+  b = m.ExportCSV()
+  print(b)
   m.Shutdown()

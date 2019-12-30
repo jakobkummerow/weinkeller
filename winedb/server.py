@@ -1,3 +1,4 @@
+from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
@@ -93,6 +94,16 @@ class WineHandler(BaseHTTPRequestHandler):
 
     elif path == "/get_totals":
       self._send_json(self._server.manager.GetTotals())
+
+    elif path == "/export":
+      self.send_response(200)
+      self.send_header("Content-type", "text/csv")
+      filename = "wines-%s.csv" % date.today()
+      self.send_header("Content-Disposition",
+                       "attachment;filename=\"%s\"" % filename)
+      self.end_headers()
+      result = self._server.manager.ExportCSV()
+      self.wfile.write(result.encode('utf-8'))
 
   def _get_post_data(self, option):
     return self._post_data[option][0].strip()
