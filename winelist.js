@@ -145,9 +145,7 @@ function UpdateMinusButton(minus_button, count, opt_real_count) {
 }
 
 function ClickPlus_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var update = JSON.parse(response);
+  var update = GetResponse(this);
   var tr = document.getElementById("wine_" + update.yearid);
   // vineyard -> wine -> year -> count
   var td = tr.firstChild.nextSibling.nextSibling.nextSibling;
@@ -245,16 +243,12 @@ function ApplyStock(year_id, count) {
 }
 
 function ApplyStock_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   ApplyStock(data.yearid, data.count);
 }
 
 function ApplyStockWine_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   for (var year_id in data) {
     var count = data[year_id].count;
     ApplyStock(year_id, count);
@@ -367,9 +361,7 @@ function ClickAge(event) {
 }
 
 function AgeChange_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   var tr = document.getElementById("wine_" + data.yearid);
   var td = tr.lastChild;
   SetInnerText(td, FormatAge(data.age));
@@ -543,10 +535,8 @@ function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
 function PopulateList_Callback() {
   var winelist = document.getElementById("winelist");
   DropAllChildren(winelist);
-  var response = decodeURIComponent(this.responseText);
   var edit_mode = IsEditMode();
-  document.getElementById("output").innerHTML = response;
-  var all_wines = JSON.parse(response);
+  var all_wines = GetResponse(this);
   for (var vineyard in all_wines) {
     var first_wine = true;
     var vineyard_data = all_wines[vineyard];
@@ -610,7 +600,7 @@ function PopulateList_Callback() {
 function PopulateList_Sorted() {
   var winelist = document.getElementById("winelist");
   DropAllChildren(winelist);
-  var response = JSON.parse(decodeURIComponent(this.responseText));
+  var response = GetResponse(this);
   for (var wine of response) {
     var tr = document.createElement("tr");
     tr.id = "wine_" + wine.wineid;
@@ -679,9 +669,7 @@ function PopulateVineyards() {
 
 function PopulateVineyards_Callback() {
   var vineyards_list = document.getElementById("vineyards_completions");
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  PopulateDataList(vineyards_list, JSON.parse(response));
+  PopulateDataList(vineyards_list, GetResponse(this));
 }
 
 function PopulateWines() {
@@ -693,9 +681,7 @@ function PopulateWines() {
 
 function PopulateWines_Callback() {
   var wines_list = document.getElementById("wines_completions");
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  PopulateDataList(wines_list, JSON.parse(response));
+  PopulateDataList(wines_list, GetResponse(this));
 }
 
 function UpdateTotals() {
@@ -703,9 +689,7 @@ function UpdateTotals() {
 }
 
 function UpdateTotals_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   var count = document.getElementById("total_count");
   SetInnerText(count, data.count);
   var price = document.getElementById("total_price");

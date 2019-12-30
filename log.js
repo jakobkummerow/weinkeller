@@ -33,9 +33,7 @@ function ReasonChange(event) {
 }
 
 function ReasonChange_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   var td = document.getElementById("log_reason_" + data.log_id);
   td.replaceChild(document.createTextNode(FormatReason(data.reason)),
                   td.firstChild);
@@ -44,16 +42,12 @@ function ReasonChange_Callback() {
 function PopulateLog_Callback() {
   var log = document.getElementById("log");
   DropAllChildren(log);
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   for (var d of data) {
     var tr = document.createElement("tr");
     AppendTextTd(tr, d.date);
     AppendTextTd(tr, d.wine);
     AppendTextTd(tr, d.delta);
-    // pencil: \u270F
-    // notepad: \u{1F4DD}
     var td_reason = document.createElement("td");
     td_reason.id = "log_reason_" + d.log_id;
     td_reason.appendChild(document.createTextNode(FormatReason(d.reason)));

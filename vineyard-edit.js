@@ -61,10 +61,8 @@ var g_VineyardEdit = (function() {
   }
 
   function CountryListCallback() {
-    var response = decodeURIComponent(this.responseText);
-    document.getElementById("output").innerHTML = response;
     var country_list = document.getElementById("country_list");
-    PopulateDataList(country_list, JSON.parse(response));
+    PopulateDataList(country_list, GetResponse(this));
   }
 
   function PopulateRegions() {
@@ -74,10 +72,8 @@ var g_VineyardEdit = (function() {
   }
 
   function PopulateRegions_Callback() {
-    var response = decodeURIComponent(this.responseText);
-    document.getElementById("output").innerHTML = response;
     var region_list = document.getElementById("region_list");
-    PopulateDataList(region_list, JSON.parse(response));
+    PopulateDataList(region_list, GetResponse(this));
   }
 
   function Edit(event) {
@@ -206,10 +202,8 @@ var g_WineEdit = (function() {
   }
 
   function GrapeListCallback() {
-    var response = decodeURIComponent(this.responseText);
-    document.getElementById("output").innerHTML = response;
     var grape_list = document.getElementById("grape_list");
-    PopulateDataList(grape_list, JSON.parse(response));
+    PopulateDataList(grape_list, GetResponse(this));
   }
 
   function Edit(event) {
@@ -269,9 +263,7 @@ function ShowVineyardEdit(event) {
 }
 
 function ShowVineyardEdit_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   g_VineyardEdit.Populate(data);
 }
 
@@ -282,9 +274,7 @@ function ShowWineEdit(event) {
 }
 
 function ShowWineEdit_Callback() {
-  var response = decodeURIComponent(this.responseText);
-  document.getElementById("output").innerHTML = response;
-  var data = JSON.parse(response);
+  var data = GetResponse(this);
   g_WineEdit.Populate(data);
 }
 

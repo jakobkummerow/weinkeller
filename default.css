@@ -172,13 +172,6 @@ td.label {
   width: 50%;
 }
 
-#output {
-  background-color: #eee;
-  border: 1px solid black;
-  margin-top: 20px;
-  padding: 10px;
-}
-
 .rating {
   border: none;
   float: left;

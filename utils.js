@@ -49,6 +49,12 @@ function SendGet(endpoint, callback, data = null) {
   xhr.send();
 }
 
+function GetResponse(xhr) {
+  var response = decodeURIComponent(xhr.responseText);
+  console.log(response);
+  return JSON.parse(response);
+}
+
 function SetInnerText(parent, text) {
   parent.replaceChild(document.createTextNode(text), parent.firstChild);
 }
