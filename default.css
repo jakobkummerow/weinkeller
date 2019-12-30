@@ -7,11 +7,14 @@ select {
   font-size: 12pt;
 }
 
-td.vineyard {
+td.vineyard, td.wine {
   cursor: hand;
 }
-td.wine {
+#stock_reset_all, #stock_apply_all {
   cursor: hand;
+}
+td.highlight {
+  background-color: #d9e6ff;
 }
 button {
   border-radius: 6px;
@@ -35,20 +38,24 @@ button.minus {
   border-left: 2px solid #ffb3b8;
   font-weight: bold;
 }
+button.apply {
+  margin-left: 10px;
+}
 button.edit {
   background-color: #ffffa0;
   border-right: 2px solid #b3b370;
   border-bottom: 2px solid #b3b370;
   border-top: 2px solid #ffffe6;
   border-left: 2px solid #ffffe6;
-  font-size: 12pt;
 }
-button.add {
+button.add, button.apply {
   background-color: #80b0ff;
   border-right: 2px solid #5a7bb3;
   border-bottom: 2px solid #5a7bb3;
   border-top: 2px solid #ccdfff;
   border-left: 2px solid #ccdfff;
+}
+button.add, button.edit {
   font-size: 12pt;
 }
 
@@ -58,6 +65,10 @@ button.add {
   box-shadow: 2px 2px 2px #aaa;
   margin: 2px;
   padding: 10px;
+}
+
+.checked {
+  background-color: #e6737c;
 }
 
 table.winelist {

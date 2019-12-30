@@ -49,6 +49,10 @@ function SendGet(endpoint, callback, data = null) {
   xhr.send();
 }
 
+function SetInnerText(parent, text) {
+  parent.replaceChild(document.createTextNode(text), parent.firstChild);
+}
+
 function ReplaceTextWithInput(parent, size, keyup_handler) {
   var input = document.createElement("input");
   input.value = parent.textContent.trim();

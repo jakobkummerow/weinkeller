@@ -21,12 +21,14 @@ CREATE TABLE IF NOT EXISTS wines (
   comment TEXT DEFAULT ""
 )"""
 
+# stock: temporary count during stock-taking mode.
 CREATE_YEARS = """
 CREATE TABLE IF NOT EXISTS years (
   id INTEGER PRIMARY KEY,
   wine INTEGER REFERENCES wines,
   year INTEGER,
   count INTEGER,
+  stock INTEGER DEFAULT 0,
   price INTEGER,
   rating REAL DEFAULT 0,
   value REAL DEFAULT 0,
@@ -88,7 +90,7 @@ class Manager:
         AND name='years' OR name='vineyards' OR name='wines' OR name='log'
         """).fetchone()[0]
     if existing != 4:
-      c.execute("PRAGMA user_version = 1")
+      c.execute("PRAGMA user_version = 2")
     # Make sure tables exist.
     c.execute(CREATE_VINEYARDS)
     c.execute(CREATE_WINES)
@@ -120,6 +122,13 @@ class Manager:
       self._conn.execute("ALTER TABLE years ADD COLUMN value REAL DEFAULT 0")
       self._conn.execute("PRAGMA user_version = 1")
       self._conn.commit()
+      version = 1
+    if version < 2:
+      print("Updating database version 1->2...")
+      self._conn.execute("ALTER TABLE years ADD COLUMN stock INTEGER DEFAULT 0")
+      self._conn.execute("PRAGMA user_version = 2")
+      self._conn.commit()
+      version = 2
 
   def Log(self, wine, delta, reason):
     date = datetime.date.today().isoformat()
@@ -231,35 +240,97 @@ class Manager:
       pass
     self._conn.commit()
 
-  def _GetCurrentCount(self, wine_id):
-    c = self._conn.execute("SELECT count FROM years WHERE id=?", (wine_id,))
+  def _GetCurrentCount(self, year_id):
+    c = self._conn.execute("SELECT count FROM years WHERE id=?", (year_id,))
     return c.fetchone()["count"]
 
-  # TODO: "wine_id" should maybe be called "year_id" or something
-  def AddOneBottle(self, wine_id, reason):
-    self._conn.execute("UPDATE years SET count=count+1 WHERE id=?", (wine_id,))
-    self.Log(wine_id, 1, reason)
-    self._conn.commit()
-    return self._GetCurrentCount(wine_id)
+  def _GetCurrentStock(self, year_id):
+    c = self._conn.execute("SELECT stock FROM years WHERE id=?", (year_id,))
+    return c.fetchone()["stock"]
 
-  def RemoveOneBottle(self, wine_id, reason):
-    self._conn.execute("UPDATE years SET count=count-1 WHERE id=?", (wine_id,))
-    self.Log(wine_id, -1, reason)
+  def AddOneBottle(self, year_id, reason):
+    self._conn.execute("UPDATE years SET count=count+1 WHERE id=?", (year_id,))
+    self.Log(year_id, 1, reason)
     self._conn.commit()
-    return self._GetCurrentCount(wine_id)
+    return self._GetCurrentCount(year_id)
 
-  def DeleteYear(self, wineid):
-    self._conn.execute("DELETE FROM years WHERE id=?", (wineid,))
+  def RemoveOneBottle(self, year_id, reason):
+    self._conn.execute("UPDATE years SET count=count-1 WHERE id=?", (year_id,))
+    self.Log(year_id, -1, reason)
+    self._conn.commit()
+    return self._GetCurrentCount(year_id)
+
+  def AddStock(self, year_id):
+    self._conn.execute("UPDATE years SET stock=stock+1 WHERE id=?", (year_id,))
+    self._conn.commit()
+    return self._GetCurrentStock(year_id)
+
+  def RemoveStock(self, year_id):
+    self._conn.execute("UPDATE years SET stock=stock-1 WHERE id=?", (year_id,))
+    self._conn.commit()
+    return self._GetCurrentStock(year_id)
+
+  def _ApplyStockYear(self, year_id):
+    self._conn.execute("UPDATE years SET count=stock WHERE id=?",
+                       (year_id,))
+
+  def _ApplyStockWine(self, wine_id, result):
+    yc = self._conn.execute("SELECT id, stock FROM years WHERE wine=?",
+                            (wine_id,))
+    for year_row in yc:
+      year_id = year_row["id"]
+      self._ApplyStockYear(year_id)
+      result[year_id] = {"count": year_row["stock"]}
+
+  def _ApplyStockVineyard(self, vineyard_id, result):
+    wc = self._conn.execute("SELECT id FROM wines WHERE vineyard=?",
+                            (vineyard_id,))
+    for wine_row in wc:
+      wine_id = wine_row["id"]
+      self._ApplyStockWine(wine_id, result)
+
+  def ApplyStock(self, year_id):
+    self._ApplyStockYear(year_id)
+    self._conn.commit()
+    return self._GetCurrentCount(year_id)
+
+  def ApplyStockWine(self, wineid):
+    result = {}
+    self._ApplyStockWine(wineid, result)
+    self._conn.commit()
+    return result
+
+  def ApplyStockVineyard(self, vineyard_id):
+    result = {}
+    self._ApplyStockVineyard(vineyard_id, result)
+    self._conn.commit()
+    return result
+
+  def ApplyStockAll(self):
+    self._conn.execute("UPDATE years SET count=stock")
+    self._conn.commit()
+    result = {}
+    c = self._conn.execute("SELECT id, count FROM years")
+    for row in c:
+      result[row["id"]] = {"count": row["count"]}
+    return result
+
+  def ResetStockAll(self):
+    self._conn.execute("UPDATE years SET stock=0")
     self._conn.commit()
 
-  def Update(self, wine_id, price, comment):
+  def DeleteYear(self, year_id):
+    self._conn.execute("DELETE FROM years WHERE id=?", (year_id,))
+    self._conn.commit()
+
+  def Update(self, year_id, price, comment):
     self._conn.execute("UPDATE years SET price=?, comment=? WHERE id=?",
-                       (price, comment, wine_id))
+                       (price, comment, year_id))
     self._conn.commit()
 
-  def UpdateRating(self, yearid, what, val):
+  def UpdateRating(self, year_id, what, val):
     self._conn.execute("UPDATE years SET %s=? WHERE id=?" % what,
-                       (val, yearid))
+                       (val, year_id))
     self._conn.commit()
 
   def GetAll(self, only_existing):
@@ -285,6 +356,7 @@ class Manager:
           years[year_row["year"]] = {
             "wineid": year_row["id"],
             "count": year_row["count"],
+            "stock": year_row["stock"],
             "price": year_row["price"],
             "rating": year_row["rating"],
             "value": year_row["value"],
@@ -308,6 +380,7 @@ class Manager:
     sortby = self.GetSortKey(sortby)
     c = self._conn.execute("""
       SELECT years.id as wineid, years.year as year, years.count as count,
+             years.stock as stock,
              years.price as price, years.rating as rating, years.value as value,
              years.sweetness as sweetness, years.age as age,
              years.comment as comment, wines.id as wine_id,
@@ -323,6 +396,7 @@ class Manager:
         "wineid": r["wineid"],
         "year": r["year"],
         "count": r["count"],
+        "stock": r["stock"],
         "price": r["price"],
         "rating": r["rating"],
         "value": r["value"],
@@ -449,10 +523,7 @@ if __name__ == '__main__':
   c = m._conn.execute("PRAGMA user_version")
   version = c.fetchone()[0]
   print(version)
-  if (version == 0):
-    print("Updating version 0->1")
-    m._conn.execute("""ALTER TABLE years ADD COLUMN value REAL DEFAULT 0""")
-    m._conn.execute("""PRAGMA user_version = 1""")
+  m.ApplyDatabaseUpdates()
   version = m._conn.execute("PRAGMA user_version").fetchone()[0]
   print(version)
   #print(c.fetchall())

@@ -9,18 +9,17 @@
 <script type="text/javascript" src="log.js"></script>
 <script type="text/javascript" src="vineyard-edit.js"></script>
 
-<style>
-
-</style>
-
 <script>
 "use strict";
 
 function start() {
   PopulateList();
   document.getElementById("edit_mode").onchange = ToggleEditMode;
+  document.getElementById("stock_mode").onchange = ToggleStockMode;
   document.getElementById("show_only_existing").onchange = ToggleShowExisting;
   document.getElementById("add_vineyard").onchange = PopulateWines;
+  document.getElementById("stock_reset_all").onclick = ClickResetAllStock;
+  document.getElementById("stock_apply_all").onclick = ClickApplyAll;
   g_VineyardEdit.Init();
   g_WineEdit.Init();
   PopulateDefaultReasons();
@@ -37,6 +36,9 @@ function start() {
   Einstellungen:
   <span class="setting">
     <label>Editier-Modus: <input id="edit_mode" type="checkbox"></label>
+  </span>
+  <span class="setting">
+    <label>Inventur-Modus: <input id="stock_mode" type="checkbox"></label>
   </span>
   <span class="setting">
     <label>Nur vorhandene Weine anzeigen:
@@ -106,6 +108,11 @@ function start() {
 </tr>
 </tfoot>
 </table>
+
+<p id="stock_mode_controls" style="display:none">
+  <span id="stock_reset_all" class="setting">Inventur: alle zurücksetzen</span>
+  <span id="stock_apply_all" class="setting">Inventur: alle übernehmen</span>
+</p>
 
 <p>Letzte Änderungen:</p>
 <table class="winelist">

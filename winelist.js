@@ -3,6 +3,8 @@
 // Allowed: default, count_{asc,desc}, price_{asc,desc}, rating_{asc,desc},
 // year_{asc,desc}, value_{asc,desc}, sweetness_{asc,desc}, age_{asc,desc}
 var g_viewmode = "default";
+var g_edit_mode = false;
+var g_stock_mode = false;
 
 var kAges = {
   0: "unbekannt",
@@ -11,6 +13,15 @@ var kAges = {
   3: "genau richtig",
   4: "muss weg",
   5: "zu alt",
+}
+
+var kLang = {
+  checkmark: "\u2713",
+  save_button_text: "\u270E",
+  save_string: "Speichern",
+  plus_button_text: "+",
+  minus_button_text: "−",
+  delete_button_text: "Lö",
 }
 
 function FormatAge(int) {
@@ -26,7 +37,11 @@ function ReasonAdd() {
 }
 
 function IsEditMode() {
-  return document.getElementById("edit_mode").checked;
+  return g_edit_mode;
+}
+
+function IsStockMode() {
+  return g_stock_mode;
 }
 
 function ClickVineyardHeader() {
@@ -66,15 +81,23 @@ function ClickAgeHeader() {
 }
 
 function ClickPlus(event) {
-  var wineid = event.target.parentElement.parentElement.wineid;
-  var reason = document.getElementById("default_reason_add").value;
-  SendPost("add_bottle", ClickPlus_Callback, {wineid, reason});
+  var yearid = event.target.parentElement.parentElement.wineid;
+  if (IsStockMode()) {
+    SendPost("add_stock", ClickPlus_Callback, {yearid});
+  } else {
+    var reason = document.getElementById("default_reason_add").value;
+    SendPost("add_bottle", ClickPlus_Callback, {yearid, reason});
+  }
 }
 
 function ClickMinus(event) {
-  var wineid = event.target.parentElement.parentElement.wineid;
-  var reason = document.getElementById("default_reason_delete").value;
-  SendPost("remove_bottle", ClickPlus_Callback, {wineid, reason});
+  var yearid = event.target.parentElement.parentElement.wineid;
+  if (IsStockMode()) {
+    SendPost("remove_stock", ClickPlus_Callback, {yearid})
+  } else {
+    var reason = document.getElementById("default_reason_delete").value;
+    SendPost("remove_bottle", ClickPlus_Callback, {yearid, reason});
+  }
 }
 
 function ClickDelete(event) {
@@ -85,21 +108,61 @@ function ClickDelete(event) {
   SendPost("delete_year", PopulateList, {wineid});
 }
 
+function UpdateMinusButton(minus_button, count, opt_real_count) {
+  if (IsStockMode()) {
+    SetInnerText(minus_button, kLang.minus_button_text);
+    if (count === 0) {
+      minus_button.disabled = true;
+    } else {
+      minus_button.disabled = false;
+      minus_button.onclick = ClickMinus;
+    }
+    var td = minus_button.parentNode;
+    if (opt_real_count !== undefined) {
+      minus_button.real_count = opt_real_count;
+      var real_count = document.createTextNode(" (" + opt_real_count + ")");
+      if (minus_button.nextSibling === null) {
+        td.appendChild(real_count);
+      } else {
+        td.replaceChild(real_count, minus_button.nextSibling);
+      }
+    }
+    if (minus_button.real_count === count) {
+      td.setAttribute("class", "");
+    } else {
+      td.setAttribute("class", "highlight");
+    }
+  } else {
+    minus_button.disabled = false;
+    if (count === 0) {
+      minus_button.onclick = ClickDelete;
+      SetInnerText(minus_button, kLang.delete_button_text)
+    } else {
+      minus_button.onclick = ClickMinus;
+      SetInnerText(minus_button, kLang.minus_button_text);
+    }
+  }
+}
+
 function ClickPlus_Callback() {
   var response = decodeURIComponent(this.responseText);
   document.getElementById("output").innerHTML = response;
   var update = JSON.parse(response);
-  var tr = document.getElementById("wine_" + update.wineid);
+  var tr = document.getElementById("wine_" + update.yearid);
   // vineyard -> wine -> year -> count
   var td = tr.firstChild.nextSibling.nextSibling.nextSibling;
-  td.replaceChild(document.createTextNode(update.count), td.firstChild);
-  PopulateLog();
-  UpdateTotals();
+  var minus_button = td.firstChild.nextSibling.nextSibling;
+  var count = IsStockMode() ? update.stock : update.count;
+  SetInnerText(td, count);
+  UpdateMinusButton(minus_button, count);
+  if (!IsStockMode()) {
+    PopulateLog();
+    UpdateTotals();
+  }
 }
 
 function ClickEdit(event) {
-  event.target.replaceChild(document.createTextNode("Speichern"),
-                            event.target.firstChild);
+  SetInnerText(event.target, kLang.save_string);
   event.target.onclick = ClickSave;
   var td_comment = event.target.parentElement.previousSibling;
   ReplaceTextWithInput(td_comment, 0, KeyUp);
@@ -126,7 +189,7 @@ function ClickSave(event) {
 }
 
 function ClickSaveButton(button, actually_save) {
-  button.replaceChild(document.createTextNode("\u270E"), button.firstChild);
+  SetInnerText(button, kLang.save_button_text);
   button.onclick = ClickEdit;
   var wineid = button.parentElement.parentElement.wineid;
   var td_comment = button.parentElement.previousSibling;
@@ -141,11 +204,101 @@ function ClickSaveButton(button, actually_save) {
   }
 }
 
+function ClickApplyYear(event) {
+  var yearid = event.target.parentNode.parentNode.wineid;
+  SendPost("apply_stock", ApplyStock_Callback, {yearid});
+}
+
+function ClickApplyWine(event) {
+  event.stopPropagation();
+  var wineid = event.target.parentNode.wine_id;
+  SendPost("apply_stock_wine", ApplyStockWine_Callback, {wineid});
+}
+
+function ClickApplyVineyard(event) {
+  event.stopPropagation();
+  var vineyard_id = event.target.parentNode.vineyard_id;
+  SendPost("apply_stock_vineyard", ApplyStockWine_Callback, {vineyard_id});
+}
+
+function ClickApplyAll(event) {
+  if (!confirm("Dies überschreibt den Bestand aller Weine mit den " +
+               "Inventur-Daten. Sicher?")) {
+    return;
+  }
+  SendPost("apply_stock_all", ApplyStockWine_Callback);
+}
+
+function ClickResetAllStock(event) {
+  if (!confirm("Dies setzt alle Inventur-Daten auf 0 zurück. Sicher?")) {
+    return;
+  }
+  SendPost("reset_stock_all", ResetAllStock_Callback)
+}
+
+function ApplyStock(year_id, count) {
+  var tr = document.getElementById("wine_" + year_id);
+  var count_td = tr.firstChild.nextSibling.nextSibling.nextSibling;
+  SetInnerText(count_td, count);
+  var minus_button = count_td.firstChild.nextSibling.nextSibling;
+  UpdateMinusButton(minus_button, count, count);
+}
+
+function ApplyStock_Callback() {
+  var response = decodeURIComponent(this.responseText);
+  document.getElementById("output").innerHTML = response;
+  var data = JSON.parse(response);
+  ApplyStock(data.yearid, data.count);
+}
+
+function ApplyStockWine_Callback() {
+  var response = decodeURIComponent(this.responseText);
+  document.getElementById("output").innerHTML = response;
+  var data = JSON.parse(response);
+  for (var year_id in data) {
+    var count = data[year_id].count;
+    ApplyStock(year_id, count);
+  }
+}
+
+function ResetAllStock_Callback() {
+  var winelist = document.getElementById("winelist");
+  for (var tr = winelist.firstChild; tr !== null; tr = tr.nextSibling) {
+    var count_td = tr.firstChild.nextSibling.nextSibling.nextSibling;
+    SetInnerText(count_td, 0)
+    var minus_button = count_td.firstChild.nextSibling.nextSibling;
+    UpdateMinusButton(minus_button, 0);
+  }
+}
+
 function ToggleShowExisting() {
   PopulateList();
 }
 
 function ToggleEditMode() {
+  let checkbox = document.getElementById("edit_mode");
+  g_edit_mode = checkbox.checked;
+  let container = checkbox.parentNode.parentNode;
+  if (IsEditMode()) {
+    container.setAttribute("class", "setting checked");
+  } else {
+    container.setAttribute("class", "setting");
+  }
+  PopulateList();
+}
+
+function ToggleStockMode() {
+  let checkbox = document.getElementById("stock_mode");
+  g_stock_mode = checkbox.checked;
+  let container = checkbox.parentNode.parentNode;
+  let controls = document.getElementById("stock_mode_controls");
+  if (IsStockMode()) {
+    container.setAttribute("class", "setting checked");
+    controls.style.display = "block";
+  } else {
+    container.setAttribute("class", "setting");
+    controls.style.display = "none";
+  }
   PopulateList();
 }
 
@@ -219,7 +372,7 @@ function AgeChange_Callback() {
   var data = JSON.parse(response);
   var tr = document.getElementById("wine_" + data.yearid);
   var td = tr.lastChild;
-  td.replaceChild(document.createTextNode(FormatAge(data.age)), td.firstChild);
+  SetInnerText(td, FormatAge(data.age));
 }
 
 function PopulateList() {
@@ -232,6 +385,15 @@ function PopulateList() {
   }
 }
 
+function MaybeAddApplyButton(td, callback) {
+  if (!IsStockMode()) return;
+  var apply_button = document.createElement("button");
+  apply_button.appendChild(document.createTextNode(kLang.checkmark));
+  apply_button.onclick = callback;
+  apply_button.setAttribute("class", "apply");
+  td.appendChild(apply_button);
+}
+
 function MakeVineyardTd(name, vineyard_id, region) {
   var td = document.createElement("td");
   if (name) {
@@ -240,6 +402,7 @@ function MakeVineyardTd(name, vineyard_id, region) {
     td.vineyard_id = vineyard_id;
     td.setAttribute("class", "vineyard");
     td.setAttribute("title", region);
+    MaybeAddApplyButton(td, ClickApplyVineyard);
   }
   return td;
 }
@@ -252,30 +415,31 @@ function MakeWineTd(name, wine_id, grape) {
     td.wine_id = wine_id;
     td.setAttribute("class", "wine");
     td.setAttribute("title", grape);
+    MaybeAddApplyButton(td, ClickApplyWine);
   }
   return td;
 }
 
-function MakeCountTd(count) {
+function MakeYearTd(year) {
+  var td = document.createElement("td");
+  td.appendChild(document.createTextNode(year));
+  MaybeAddApplyButton(td, ClickApplyYear);
+  return td;
+}
+
+function MakeCountTd(count, real_count) {
   var td = document.createElement("td");
   td.appendChild(document.createTextNode(count));
   var plus_button = document.createElement("button");
-  plus_button.appendChild(document.createTextNode("+"));
+  plus_button.appendChild(document.createTextNode(kLang.plus_button_text));
   plus_button.onclick = ClickPlus;
   plus_button.setAttribute("class", "plus");
   td.appendChild(plus_button);
   var minus_button = document.createElement("button");
-  var label;
-  if (count > 0) {
-    label = "–";
-    minus_button.onclick = ClickMinus;
-  } else {
-    label = "Lö";
-    minus_button.onclick = ClickDelete;
-  }
-  minus_button.appendChild(document.createTextNode(label));
-  minus_button.setAttribute("class", "minus");
   td.appendChild(minus_button);
+  minus_button.appendChild(document.createTextNode(""));  // For replacing.
+  UpdateMinusButton(minus_button, count, real_count);
+  minus_button.setAttribute("class", "minus");
   return td;
 }
 
@@ -283,7 +447,7 @@ function MakeButtonsTd() {
   var td = document.createElement("td");
   var button_edit = document.createElement("button");
   button_edit.onclick = ClickEdit;
-  button_edit.appendChild(document.createTextNode("\u270E"));
+  button_edit.appendChild(document.createTextNode(kLang.save_button_text));
   button_edit.setAttribute("class", "edit");
   td.appendChild(button_edit);
   return td;
@@ -368,7 +532,7 @@ function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
   AppendInputTd(tr, "Kommentar");
   var button_td = document.createElement("td");
   var button_add = document.createElement("button");
-  button_add.appendChild(document.createTextNode("\u2713"));
+  button_add.appendChild(document.createTextNode(kLang.checkmark));
   button_add.setAttribute("class", "add");
   button_add.onclick = callback;
   button_td.appendChild(button_add);
@@ -400,7 +564,8 @@ function PopulateList_Callback() {
         tr.wineid = data.wineid;
         // Vineyard.
         if (first_wine) {
-          tr.appendChild(MakeVineyardTd(vineyard, vineyard_data.id, vineyard_data.region));
+          tr.appendChild(
+              MakeVineyardTd(vineyard, vineyard_data.id, vineyard_data.region));
         } else {
           tr.appendChild(MakeVineyardTd(null, null, null));
         }
@@ -412,9 +577,10 @@ function PopulateList_Callback() {
           tr.appendChild(MakeWineTd(null, null, null));
         }
         // Year.
-        AppendTextTd(tr, year);
+        tr.appendChild(MakeYearTd(year));
         // Count.
-        tr.appendChild(MakeCountTd(data.count));
+        let count = IsStockMode() ? data.stock : data.count;
+        tr.appendChild(MakeCountTd(count, data.count));
         // Price, comment.
         AppendTextTd(tr, FormatPrice(data.price));
         AppendTextTd(tr, data.comment);
@@ -455,9 +621,10 @@ function PopulateList_Sorted() {
     // Wine.
     tr.appendChild(MakeWineTd(wine.wine_name, wine.wine_id, wine.grape));
     // Year.
-    AppendTextTd(tr, wine.year);
+    tr.appendChild(MakeYearTd(wine.year));
     // Count, price, comment.
-    tr.appendChild(MakeCountTd(wine.count));
+    let count = IsStockMode() ? wine.stock : wine.count;
+    tr.appendChild(MakeCountTd(count, wine.count));
     AppendTextTd(tr, FormatPrice(wine.price));
     AppendTextTd(tr, wine.comment);
     // Buttons.
@@ -540,8 +707,7 @@ function UpdateTotals_Callback() {
   document.getElementById("output").innerHTML = response;
   var data = JSON.parse(response);
   var count = document.getElementById("total_count");
-  count.replaceChild(document.createTextNode(data.count), count.firstChild);
+  SetInnerText(count, data.count);
   var price = document.getElementById("total_price");
-  price.replaceChild(document.createTextNode(FormatPrice(data.price)),
-                     price.firstChild);
+  SetInnerText(price, FormatPrice(data.price));
 }

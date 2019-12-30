@@ -149,16 +149,48 @@ class WineHandler(BaseHTTPRequestHandler):
       self._send_json(self._server.manager.GetAll(only_existing))
 
     elif self.path == "/add_bottle":
-      wineid = self._get_post_data("wineid")
+      yearid = self._get_post_data("yearid")
       reason = self._get_post_data("reason")
-      updated = self._server.manager.AddOneBottle(wineid, reason)
-      self._send_json({"wineid": wineid, "count": updated})
+      updated = self._server.manager.AddOneBottle(yearid, reason)
+      self._send_json({"yearid": yearid, "count": updated})
 
     elif self.path == "/remove_bottle":
-      wineid = self._get_post_data("wineid")
+      yearid = self._get_post_data("yearid")
       reason = self._get_post_data("reason")
-      updated = self._server.manager.RemoveOneBottle(wineid, reason)
-      self._send_json({"wineid": wineid, "count": updated})
+      updated = self._server.manager.RemoveOneBottle(yearid, reason)
+      self._send_json({"yearid": yearid, "count": updated})
+
+    elif self.path == "/add_stock":
+      yearid = self._get_post_data("yearid")
+      updated = self._server.manager.AddStock(yearid)
+      self._send_json({"yearid": yearid, "stock": updated})
+
+    elif self.path == "/remove_stock":
+      yearid = self._get_post_data("yearid")
+      updated = self._server.manager.RemoveStock(yearid)
+      self._send_json({"yearid": yearid, "stock": updated})
+
+    elif self.path == "/apply_stock":
+      yearid = self._get_post_data("yearid")
+      updated = self._server.manager.ApplyStock(yearid)
+      self._send_json({"yearid": yearid, "count": updated})
+
+    elif self.path == "/apply_stock_wine":
+      wineid = self._get_post_data("wineid")
+      result = self._server.manager.ApplyStockWine(wineid)
+      self._send_json(result)
+
+    elif self.path == "/apply_stock_vineyard":
+      vineyard_id = self._get_post_data("vineyard_id")
+      result = self._server.manager.ApplyStockVineyard(vineyard_id)
+      self._send_json(result)
+
+    elif self.path == "/apply_stock_all":
+      self._send_json(self._server.manager.ApplyStockAll())
+
+    elif self.path == "/reset_stock_all":
+      self._server.manager.ResetStockAll()
+      self._send_json({"status": "ok"})
 
     elif self.path == "/delete_year":
       wineid = self._get_post_data("wineid")
