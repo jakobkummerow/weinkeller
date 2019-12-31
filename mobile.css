@@ -1,0 +1,52 @@
+body {
+  font-family: Roboto, Arial;
+  font-size: 3rem;
+}
+.vineyard, .wine, .year {
+  border-radius: 4px;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+              0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+              0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e0e0e0;
+  margin: 5px;
+  padding: 5px;
+}
+.vineyard {
+  margin-bottom: 20px;
+}
+.wine {
+  background-color: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+}
+.year {
+  background-color: white;
+  display: grid;
+  font-size: 4rem;
+  grid-template-columns: 33% 33% 33%;
+  padding: 10px;
+}
+button.plus, button.minus {
+  font-size: 4rem;
+  font-weight: bold;
+  min-width: 5rem;
+}
+button.plus {
+  background-color: #4ee68d;
+  border-right: 2px solid #3db36e;
+  border-bottom: 2px solid #3db36e;
+  border-top: 2px solid #99ffc3;
+  border-left: 2px solid #99ffc3;
+  margin-left: 20px;
+  margin-right: 5px;
+}
+button.minus {
+  background-color: #e6737c;
+  border-right: 2px solid #b32430;
+  border-bottom: 2px solid #b32430;
+  border-top: 2px solid #ffb3b8;
+  border-left: 2px solid #ffb3b8;
+}

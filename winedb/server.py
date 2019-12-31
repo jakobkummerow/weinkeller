@@ -16,20 +16,26 @@ class WineHandler(BaseHTTPRequestHandler):
 
   def _set_headers(self, content_type):
     self.send_response(200)
-    self.send_header('Content-type', content_type)
+    self.send_header("Content-type", content_type)
     self.end_headers()
 
   def _send_json(self, data):
-    self._set_headers('application/json')
+    self._set_headers("application/json")
     response = urllib.parse.quote(json.dumps(data, sort_keys=True))
-    self.wfile.write(response.encode('utf-8'))
+    self.wfile.write(response.encode("utf-8"))
 
   def do_GET(self):
     parsed_path = urllib.parse.urlparse(self.path)
     path = parsed_path.path
 
-    if path == '/':
-      path = '/index.html'
+    if path == "/":
+      user_agent = self.headers['user-agent'].lower()
+      if "android" in user_agent or "mobile" in user_agent:
+        path = "/mobile.html"
+      else:
+        path = "/index.html"
+    elif path == "/m":
+      path = "/mobile.html"
 
     try:
       mimetype = None
@@ -49,7 +55,7 @@ class WineHandler(BaseHTTPRequestHandler):
         with open(self._basedir + path, "rb") as f:
           self.wfile.write(f.read())
     except IOError:
-      self.send_error(404, 'File not found: %s' % self.path)
+      self.send_error(404, "File not found: %s" % self.path)
 
     raw_query = parsed_path.query
     query = urllib.parse.parse_qs(raw_query)
