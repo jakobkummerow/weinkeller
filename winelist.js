@@ -81,7 +81,7 @@ function ClickAgeHeader() {
 }
 
 function ClickPlus(event) {
-  var yearid = event.target.parentElement.parentElement.wineid;
+  var yearid = event.target.parentElement.parentElement.year_id;
   if (IsStockMode()) {
     SendPost("add_stock", ClickPlus_Callback, {yearid});
   } else {
@@ -91,7 +91,7 @@ function ClickPlus(event) {
 }
 
 function ClickMinus(event) {
-  var yearid = event.target.parentElement.parentElement.wineid;
+  var yearid = event.target.parentElement.parentElement.year_id;
   if (IsStockMode()) {
     SendPost("remove_stock", ClickPlus_Callback, {yearid})
   } else {
@@ -101,11 +101,11 @@ function ClickMinus(event) {
 }
 
 function ClickDelete(event) {
-  var wineid = event.target.parentElement.parentElement.wineid;
+  var year_id = event.target.parentElement.parentElement.year_id;
   if (!confirm("Diesen Wein (samt Preis, Kommentar, Bewertung) löschen?")) {
     return;
   }
-  SendPost("delete_year", PopulateList, {wineid});
+  SendPost("delete_year", PopulateList, {year_id});
 }
 
 function UpdateMinusButton(minus_button, count, opt_real_count) {
@@ -146,7 +146,7 @@ function UpdateMinusButton(minus_button, count, opt_real_count) {
 
 function ClickPlus_Callback() {
   var update = GetResponse(this);
-  var tr = document.getElementById("wine_" + update.yearid);
+  var tr = document.getElementById("year_" + update.yearid);
   // vineyard -> wine -> year -> count
   var td = tr.firstChild.nextSibling.nextSibling.nextSibling;
   var minus_button = td.firstChild.nextSibling.nextSibling;
@@ -189,13 +189,13 @@ function ClickSave(event) {
 function ClickSaveButton(button, actually_save) {
   SetInnerText(button, kLang.save_button_text);
   button.onclick = ClickEdit;
-  var wineid = button.parentElement.parentElement.wineid;
+  var year_id = button.parentElement.parentElement.year_id;
   var td_comment = button.parentElement.previousSibling;
   var td_price = td_comment.previousSibling;
   if (actually_save) {
     var comment = ReplaceInputWithText(td_comment);
     var price = ParsePrice(ReplaceInputWithText(td_price));
-    SendPost("update", null, {wineid, price, comment});
+    SendPost("update", null, {year_id, price, comment});
   } else {
     ReplaceInputWithText(td_comment, true);
     ReplaceInputWithText(td_price, true);
@@ -203,7 +203,7 @@ function ClickSaveButton(button, actually_save) {
 }
 
 function ClickApplyYear(event) {
-  var yearid = event.target.parentNode.parentNode.wineid;
+  var yearid = event.target.parentNode.parentNode.year_id;
   SendPost("apply_stock", ApplyStock_Callback, {yearid});
 }
 
@@ -235,7 +235,7 @@ function ClickResetAllStock(event) {
 }
 
 function ApplyStock(year_id, count) {
-  var tr = document.getElementById("wine_" + year_id);
+  var tr = document.getElementById("year_" + year_id);
   var count_td = tr.firstChild.nextSibling.nextSibling.nextSibling;
   SetInnerText(count_td, count);
   var minus_button = count_td.firstChild.nextSibling.nextSibling;
@@ -311,7 +311,7 @@ function CollectFields(wine_td, obj) {
 
 function ClickAddYear(event) {
   var tr = event.target.parentNode.parentNode;
-  var wine_id = tr.wineid;
+  var wine_id = tr.wine_id;
   var vineyard_td = tr.firstChild;
   var wine_td = vineyard_td.nextSibling;
   var options = {wine_id};
@@ -345,8 +345,8 @@ function ClickRatingGeneric(event, what) {
   var val = input.value;
   // label -> fieldset -> td -> tr
   var tr = event.target.parentNode.parentNode.parentNode;
-  var wineid = tr.wineid;
-  SendPost("update_rating", null, {wineid, what, val});
+  var year_id = tr.year_id;
+  SendPost("update_rating", null, {year_id, what, val});
 }
 
 function ClickAge(event) {
@@ -354,15 +354,15 @@ function ClickAge(event) {
   var td = select.parentElement;
   var tr = td.parentElement;
   if (td !== tr.lastChild) console.log("Error: age must be last child of tr");
-  var wineid = tr.wineid;
+  var year_id = tr.year_id;
   var val = select.value;
   var what = "age";
-  SendPost("update_rating", AgeChange_Callback, {wineid, what, val});
+  SendPost("update_rating", AgeChange_Callback, {year_id, what, val});
 }
 
 function AgeChange_Callback() {
   var data = GetResponse(this);
-  var tr = document.getElementById("wine_" + data.yearid);
+  var tr = document.getElementById("year_" + data.yearid);
   var td = tr.lastChild;
   SetInnerText(td, FormatAge(data.age));
 }
@@ -394,6 +394,7 @@ function MakeVineyardTd(name, vineyard_id, region) {
     td.vineyard_id = vineyard_id;
     td.setAttribute("class", "vineyard");
     td.setAttribute("title", region);
+    td.id = "vineyard_" + vineyard_id;
     MaybeAddApplyButton(td, ClickApplyVineyard);
   }
   return td;
@@ -407,6 +408,7 @@ function MakeWineTd(name, wine_id, grape) {
     td.wine_id = wine_id;
     td.setAttribute("class", "wine");
     td.setAttribute("title", grape);
+    td.id = "wine_" + wine_id;
     MaybeAddApplyButton(td, ClickApplyWine);
   }
   return td;
@@ -445,19 +447,19 @@ function MakeButtonsTd() {
   return td;
 }
 
-function MakeRatingTd(wineid, current) {
+function MakeRatingTd(year_id, current) {
   var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
-  return MakeGenericRatingTd(labels, "rating", ClickRating, wineid, current);
+  return MakeGenericRatingTd(labels, "rating", ClickRating, year_id, current);
 }
 
-function MakeValueTd(wineid, current) {
+function MakeValueTd(year_id, current) {
   var labels = ["Herausragend", "Sehr gut", "Solide", "Mäßig", "Schlecht"];
-  return MakeGenericRatingTd(labels, "value", ClickValue, wineid, current);
+  return MakeGenericRatingTd(labels, "value", ClickValue, year_id, current);
 }
 
-function MakeSweetnessTd(wineid, current) {
+function MakeSweetnessTd(year_id, current) {
   var labels = ["Dessertwein", "feinherb", "fruchtig", "trocken", "sauer"];
-  return MakeGenericRatingTd(labels, "sweetness", ClickSweetness, wineid,
+  return MakeGenericRatingTd(labels, "sweetness", ClickSweetness, year_id,
                              current);
 }
 
@@ -510,7 +512,7 @@ function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
   AppendTextTd(tr, "");  // Vineyard.
   var callback;
   if (what === "year") {
-    tr.wineid = parent_id;
+    tr.wine_id = parent_id;
     callback = ClickAddYear;
     AppendTextTd(tr, "");  // Wine.
   } else {
@@ -548,8 +550,8 @@ function PopulateList_Callback() {
       for (var year in years) {
         var data = years[year];
         var tr = document.createElement("tr");
-        tr.id = "wine_" + data.wineid;
-        tr.wineid = data.wineid;
+        tr.id = "year_" + data.year_id;
+        tr.year_id = data.year_id;
         // Vineyard.
         if (first_wine) {
           tr.appendChild(
@@ -574,9 +576,9 @@ function PopulateList_Callback() {
         // Buttons.
         tr.appendChild(MakeButtonsTd());
         // Ratings.
-        tr.appendChild(MakeRatingTd(data.wineid, data.rating));
-        tr.appendChild(MakeValueTd(data.wineid, data.value));
-        tr.appendChild(MakeSweetnessTd(data.wineid, data.sweetness));
+        tr.appendChild(MakeRatingTd(data.year_id, data.rating));
+        tr.appendChild(MakeValueTd(data.year_id, data.value));
+        tr.appendChild(MakeSweetnessTd(data.year_id, data.sweetness));
         tr.appendChild(MakeAgeTd(data.age));
 
         winelist.appendChild(tr);
@@ -598,8 +600,8 @@ function PopulateList_Sorted() {
   var response = GetResponse(this);
   for (var wine of response) {
     var tr = document.createElement("tr");
-    tr.id = "wine_" + wine.wineid;
-    tr.wineid = wine.wineid;
+    tr.id = "year_" + wine.year_id;
+    tr.year_id = wine.year_id;
     // Vineyard.
     tr.appendChild(MakeVineyardTd(wine.vineyard_name, wine.vineyard_id,
                                   wine.region));
@@ -615,12 +617,26 @@ function PopulateList_Sorted() {
     // Buttons.
     tr.appendChild(MakeButtonsTd());
     // Ratings.
-    tr.appendChild(MakeRatingTd(wine.wineid, wine.rating));
-    tr.appendChild(MakeValueTd(wine.wineid, wine.value));
-    tr.appendChild(MakeSweetnessTd(wine.wineid, wine.sweetness));
+    tr.appendChild(MakeRatingTd(wine.year_id, wine.rating));
+    tr.appendChild(MakeValueTd(wine.year_id, wine.value));
+    tr.appendChild(MakeSweetnessTd(wine.year_id, wine.sweetness));
     tr.appendChild(MakeAgeTd(wine.age));
     winelist.append(tr);
   }
+}
+
+function UpdateVineyard() {
+  var update = GetResponse(this);
+  var td = document.getElementById("vineyard_" + update.id);
+  SetInnerText(td, update.name);
+  td.setAttribute("title", update.region);
+}
+
+function UpdateWine() {
+  var update = GetResponse(this);
+  var td = document.getElementById("wine_" + update.id);
+  SetInnerText(td, update.name);
+  td.setAttribute("title", update.grape);
 }
 
 function AddWine() {

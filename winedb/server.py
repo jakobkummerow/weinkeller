@@ -211,24 +211,24 @@ class WineHandler(BaseHTTPRequestHandler):
       self._send_json({"status": "ok"})
 
     elif self.path == "/delete_year":
-      wineid = self._get_post_data("wineid")
-      self._server.manager.DeleteYear(wineid)
+      year_id = self._get_post_data("year_id")
+      self._server.manager.DeleteYear(year_id)
       self._send_json({"status": "ok"})
 
     elif self.path == "/update":
-      wineid = self._get_post_data("wineid")
+      year_id = self._get_post_data("year_id")
       price = self._get_optional("price", 0)
       comment = self._get_optional("comment", "")
-      self._server.manager.Update(wineid, price, comment)
+      self._server.manager.Update(year_id, price, comment)
       self._send_json({"status": "ok"})
 
     elif self.path == "/update_rating":
-      wineid = self._get_post_data("wineid")
+      year_id = self._get_post_data("year_id")
       what = self._get_post_data("what")
       if what not in ("rating", "value", "sweetness", "age"): return
       val = self._get_post_data("val")
-      self._server.manager.UpdateRating(wineid, what, val)
-      self._send_json({"yearid": wineid, what: val})
+      self._server.manager.UpdateRating(year_id, what, val)
+      self._send_json({"yearid": year_id, what: val})
 
     elif self.path == "/set_vineyard":
       vineyard_id = self._get_post_data("vineyard_id")
@@ -238,9 +238,9 @@ class WineHandler(BaseHTTPRequestHandler):
       address = self._get_optional("address", "")
       website = self._get_optional("website", "")
       comment = self._get_optional("comment", "")
-      self._server.manager.SetVineyardData(
+      response = self._server.manager.SetVineyardData(
           vineyard_id, name, country, region, address, website, comment)
-      self._send_json({"status": "ok"})
+      self._send_json(response)
 
     elif self.path == "/update_log":
       log_id = self._get_post_data("log_id")
@@ -252,8 +252,8 @@ class WineHandler(BaseHTTPRequestHandler):
       name = self._get_post_data("name")
       grape = self._get_optional("grape", "")
       comment = self._get_optional("comment", "")
-      self._server.manager.UpdateWine(wine_id, name, grape, comment)
-      self._send_json({"status": "ok"})
+      response = self._server.manager.UpdateWine(wine_id, name, grape, comment)
+      self._send_json(response)
 
 class WineServer(HTTPServer):
   def __init__(self, server_address, basedir):

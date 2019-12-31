@@ -78,6 +78,7 @@ GRAPE_GUESSES = {
   "Klingelberg": "Riesling",
   "Klingelberger": "Riesling",
   "Sauvignon Blanc": "Sauvignon Blanc",
+  "Weißer Burgunder": "Weißburgunder",
 }
 
 class Manager:
@@ -190,12 +191,13 @@ class Manager:
     return c.fetchone()
 
   def _GuessGrapeForWine(self, wine):
-    words = wine.split(" ")
-    if wine in GRAPE_GUESSES:
-      return GRAPE_GUESSES[wine]
-    for word in words:
-      if word in KNOWN_GRAPES:
-        return word
+    wine_lower = wine.lower()
+    for guess in GRAPE_GUESSES:
+      if guess.lower() in wine_lower:
+        return guess
+    for grape in KNOWN_GRAPES:
+      if grape.lower() in wine_lower:
+        return grape
     return ""
 
   def _CreateWine(self, vineyard_id, wine):
@@ -298,9 +300,9 @@ class Manager:
     self._conn.commit()
     return self._GetCurrentCount(year_id)
 
-  def ApplyStockWine(self, wineid):
+  def ApplyStockWine(self, wine_id):
     result = {}
-    self._ApplyStockWine(wineid, result)
+    self._ApplyStockWine(wine_id, result)
     self._conn.commit()
     return result
 
@@ -359,7 +361,7 @@ class Manager:
         for year_row in yc:
           have_one_year = True
           years[year_row["year"]] = {
-            "wineid": year_row["id"],
+            "year_id": year_row["id"],
             "count": year_row["count"],
             "stock": year_row["stock"],
             "price": year_row["price"],
@@ -389,7 +391,7 @@ class Manager:
     result = []
     sortby = self.GetSortKey(sortby)
     c = self._conn.execute("""
-      SELECT years.id as wineid, years.year as year, years.count as count,
+      SELECT years.id as year_id, years.year as year, years.count as count,
              years.stock as stock,
              years.price as price, years.rating as rating, years.value as value,
              years.sweetness as sweetness, years.age as age,
@@ -403,7 +405,7 @@ class Manager:
       ORDER BY %s""" % sortby)
     for r in c:
       result.append({
-        "wineid": r["wineid"],
+        "year_id": r["year_id"],
         "year": r["year"],
         "count": r["count"],
         "stock": r["stock"],
@@ -470,6 +472,10 @@ class Manager:
         WHERE id=?""",
         (name, country, region, address, website, comment, vineyard_id))
     self._conn.commit()
+    c = self._conn.execute("SELECT id, name, region FROM vineyards WHERE id=?",
+                           (vineyard_id,))
+    r = c.fetchone()
+    return {"id": r["id"], "name": r["name"], "region": r["region"]}
 
   def GetWineData(self, wine_id):
     c = self._conn.execute("""
@@ -516,6 +522,10 @@ class Manager:
     self._conn.execute("UPDATE wines SET name=?, grape=?, comment=? WHERE id=?",
                        (name, grape, comment, wine_id))
     self._conn.commit()
+    c = self._conn.execute("SELECT id, name, grape FROM wines WHERE id=?",
+                           (wine_id,))
+    r = c.fetchone()
+    return {"id": r["id"], "name": r["name"], "grape": r["grape"]}
 
   def GetTotals(self):
     c = self._conn.execute("""

@@ -124,7 +124,7 @@ var g_VineyardEdit = (function() {
     var comment_td = Comment();
     var comment = comment_td.firstChild.innerHTML.replace("\n", "<br>");
     comment_td.innerHTML = comment;
-    SendPost("set_vineyard", null,
+    SendPost("set_vineyard", UpdateVineyard,
              {vineyard_id, name, country, region, address, website, comment})
   }
 
@@ -237,7 +237,7 @@ var g_WineEdit = (function() {
     var comment_td = Comment();
     var comment = comment_td.firstChild.value.replace("\n", "<br>");
     comment_td.innerHTML = comment;
-    SendPost("set_wine", null, {wine_id, name, grape, comment})
+    SendPost("set_wine", UpdateWine, {wine_id, name, grape, comment});
     sender_.replaceChild(document.createTextNode(name), sender_.firstChild);
   }
 
