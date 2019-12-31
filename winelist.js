@@ -545,9 +545,7 @@ function PopulateList_Callback() {
       var first_year = true;
       var wine_data = wines[wine];
       var years = wine_data.years;
-      var have_at_least_one_year = false;
       for (var year in years) {
-        have_at_least_one_year = true;
         var data = years[year];
         var tr = document.createElement("tr");
         tr.id = "wine_" + data.wineid;
@@ -560,7 +558,6 @@ function PopulateList_Callback() {
           tr.appendChild(MakeVineyardTd(null, null, null));
         }
         // Wine.
-        var td_wine = document.createElement("td");
         if (first_year) {
           tr.appendChild(MakeWineTd(wine, wine_data.id, wine_data.grape));
         } else {
@@ -586,9 +583,7 @@ function PopulateList_Callback() {
         first_wine = false;
         first_year = false;
       }  // for year in years
-      if (have_at_least_one_year) {
-        AppendEditModeRow(edit_mode, winelist, "year", wine_data.id);
-      }
+      AppendEditModeRow(edit_mode, winelist, "year", wine_data.id);
     }  // for wine in wines
     AppendEditModeRow(edit_mode, winelist, "wine", vineyard_data.id);
   }

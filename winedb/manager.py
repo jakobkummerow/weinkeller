@@ -108,8 +108,10 @@ class Manager:
       self.AddAll("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "", 2)
       self.AddAll("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
       self.AddAll("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
+      self.AddAll("Beurer", "Lemberger", 2012, 0, 3, 8.90, "ausgetrunken", 2)
       self.AddAll("Zipf", "Inka", 2012, 1, 3, 14.90, "", 2)
       self.AddAll("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
+      self._GetOrCreateVineyard("Christmann")
 
   def Shutdown(self):
     print("Datenbank wird gespeichert")
@@ -342,19 +344,20 @@ class Manager:
       wines = {}
       vineyard_data = {"wines": wines, "id": vineyard_row["id"],
                        "region": vineyard_row["region"]}
-      result[vineyard_row["name"]] = vineyard_data
       wc = self._conn.execute("SELECT * FROM wines WHERE vineyard=?",
                               (vineyard_row["id"],))
+      have_one_wine = False
       for wine_row in wc:
         years = {}
         wine_data = {"years": years, "id": wine_row["id"],
                      "grape": wine_row["grape"]}
-        wines[wine_row["name"]] = wine_data
         query = "SELECT * FROM years WHERE wine=?"
         if int(only_existing):
           query += " AND count > 0"
         yc = self._conn.execute(query, (wine_row["id"],))
+        have_one_year = False
         for year_row in yc:
+          have_one_year = True
           years[year_row["year"]] = {
             "wineid": year_row["id"],
             "count": year_row["count"],
@@ -366,6 +369,11 @@ class Manager:
             "age": year_row["age"],
             "comment": year_row["comment"]
           }
+        if have_one_year:
+          wines[wine_row["name"]] = wine_data
+          have_one_wine = True
+      if have_one_wine:
+        result[vineyard_row["name"]] = vineyard_data
     return result
 
   def GetSortKey(self, sortby):
