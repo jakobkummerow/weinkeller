@@ -194,7 +194,7 @@ class Manager:
     wine_lower = wine.lower()
     for guess in GRAPE_GUESSES:
       if guess.lower() in wine_lower:
-        return guess
+        return GRAPE_GUESSES[guess]
     for grape in KNOWN_GRAPES:
       if grape.lower() in wine_lower:
         return grape
