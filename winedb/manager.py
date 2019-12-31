@@ -462,13 +462,13 @@ class Manager:
             "total_count": total_count,
             "total_price": total_price}
 
-  def SetVineyardData(self, vineyard_id, country, region, address, website,
-                      comment):
+  def SetVineyardData(self, vineyard_id, name, country, region, address,
+                      website, comment):
     self._conn.execute("""
         UPDATE vineyards
-        SET country=?, region=?, address=?, website=?, comment=?
+        SET name=?, country=?, region=?, address=?, website=?, comment=?
         WHERE id=?""",
-        (country, region, address, website, comment, vineyard_id))
+        (name, country, region, address, website, comment, vineyard_id))
     self._conn.commit()
 
   def GetWineData(self, wine_id):

@@ -232,13 +232,14 @@ class WineHandler(BaseHTTPRequestHandler):
 
     elif self.path == "/set_vineyard":
       vineyard_id = self._get_post_data("vineyard_id")
+      name = self._get_optional("name", "")
       country = self._get_optional("country", "")
       region = self._get_optional("region", "")
       address = self._get_optional("address", "")
       website = self._get_optional("website", "")
       comment = self._get_optional("comment", "")
       self._server.manager.SetVineyardData(
-          vineyard_id, country, region, address, website, comment)
+          vineyard_id, name, country, region, address, website, comment)
       self._send_json({"status": "ok"})
 
     elif self.path == "/update_log":

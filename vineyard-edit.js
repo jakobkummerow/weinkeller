@@ -16,6 +16,9 @@ var g_VineyardEdit = (function() {
   function Title() {
     return document.getElementById("vineyard_edit_title");
   }
+  function Name() {
+    return document.getElementById("vineyard_edit_name");
+  }
   function Country() {
     return document.getElementById("vineyard_edit_country");
   }
@@ -79,6 +82,7 @@ var g_VineyardEdit = (function() {
   function Edit(event) {
     event.stopPropagation();
     set_button_save();
+    ReplaceTextWithInput(Name());
     var country_input = ReplaceTextWithInput(Country());
     country_input.id = "vineyard_edit_countryinput";
     country_input.setAttribute("list", "country_list");
@@ -103,6 +107,8 @@ var g_VineyardEdit = (function() {
     event.stopPropagation();
     set_button_edit();
     var vineyard_id = Background().vineyard_id;
+    var name = ReplaceInputWithText(Name());
+    set_text(Title(), "Weingut " + name);
     var country = ReplaceInputWithText(Country());
     var region = ReplaceInputWithText(Region());
 
@@ -119,7 +125,7 @@ var g_VineyardEdit = (function() {
     var comment = comment_td.firstChild.innerHTML.replace("\n", "<br>");
     comment_td.innerHTML = comment;
     SendPost("set_vineyard", null,
-             {vineyard_id, country, region, address, website, comment})
+             {vineyard_id, name, country, region, address, website, comment})
   }
 
   return {
@@ -136,6 +142,7 @@ var g_VineyardEdit = (function() {
       box.vineyard_id = data.id;
       set_button_edit();
       set_text(Title(), "Weingut " + data.vineyard);
+      set_text(Name(), data.vineyard);
       set_text(Country(), data.country);
       set_text(Region(), data.region);
       set_text(Address(), data.address);
