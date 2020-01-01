@@ -11,14 +11,22 @@ function AppendTextTd(tr, text) {
   return td;
 }
 
-function AppendInputTd(tr, placeholder, size) {
+function AppendInputTd(tr, placeholder, opt_min, opt_max, opt_step) {
   var td = document.createElement("td");
   var input = document.createElement("input");
   input.setAttribute("class", "edit");
   input.setAttribute("placeholder", placeholder);
-  if (size) input.setAttribute("size", size);
+  if (opt_min !== undefined) {
+    input.setAttribute("type", "number");
+    input.setAttribute("min", opt_min);
+    if (opt_max !== undefined) input.setAttribute("max", opt_max);
+    if (opt_step !== undefined) input.setAttribute("step", opt_step);
+  } else {
+    input.setAttribute("type", "text");
+  }
   td.appendChild(input);
   tr.appendChild(td);
+  return input;
 }
 
 function Serialize(obj) {
@@ -61,6 +69,8 @@ function SetInnerText(parent, text) {
 
 function ReplaceTextWithInput(parent, size, keyup_handler) {
   var input = document.createElement("input");
+  input.setAttribute("class", "edit");
+  input.setAttribute("type", "text");
   input.value = parent.textContent.trim();
   input.original_value = input.value;
   if (size) input.size = size;

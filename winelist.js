@@ -22,7 +22,14 @@ var kLang = {
   plus_button_text: "+",
   minus_button_text: "−",
   delete_button_text: "Lö",
+  invalid_count: "Anzahl fehlt/ungültig!",
+  invalid_price: "Ungültiger Preis!",
+  invalid_vineyard: "Weingut fehlt!",
+  invalid_wine: "Wein fehlt!",
+  invalid_year: "Jahr fehlt/ungültig!",
 }
+
+var kPricePattern = "[0-9]{1,3}([\.|,][0-9]{1,2})?";
 
 function FormatAge(int) {
   return kAges[int];
@@ -165,7 +172,8 @@ function ClickEdit(event) {
   var td_comment = event.target.parentElement.previousSibling;
   ReplaceTextWithInput(td_comment, 0, KeyUp);
   var td_price = td_comment.previousSibling;
-  ReplaceTextWithInput(td_price, 4, KeyUp);
+  var price_input = ReplaceTextWithInput(td_price, 4, KeyUp);
+  price_input.pattern = kPricePattern;
 }
 
 function KeyUp(event) {
@@ -187,11 +195,18 @@ function ClickSave(event) {
 }
 
 function ClickSaveButton(button, actually_save) {
-  SetInnerText(button, kLang.save_button_text);
-  button.onclick = ClickEdit;
   var year_id = button.parentElement.parentElement.year_id;
   var td_comment = button.parentElement.previousSibling;
   var td_price = td_comment.previousSibling;
+  if (actually_save) {
+    var price_input = td_price.firstChild;
+    if (!price_input.reportValidity()) {
+      alert(kLang.invalid_price);
+      return;
+    }
+  }
+  SetInnerText(button, kLang.save_button_text);
+  button.onclick = ClickEdit;
   if (actually_save) {
     var comment = ReplaceInputWithText(td_comment);
     var price = ParsePrice(ReplaceInputWithText(td_price));
@@ -296,17 +311,36 @@ function ToggleStockMode() {
   PopulateList();
 }
 
+function CollectInputValues(data, year_input, count_input, price_input, 
+                            comment_input) {
+  data.year = year_input.value;
+  data.count = count_input.value;
+  data.price = ParsePrice(price_input.value);
+  data.comment = comment_input.value;
+  data.reason = ReasonAdd();
+  data.only_existing = ShowOnlyExisting();
+  if (data.year === "") {
+    alert(kLang.invalid_year);
+    return false;
+  }
+  if (data.count === "") {
+    alert(kLang.invalid_count);
+    return false;
+  }
+  if (!price_input.reportValidity()) {
+    alert(kLang.invalid_price);
+    return false;
+  }
+  return true;
+}
+
 function CollectFields(wine_td, obj) {
   var year_td = wine_td.nextSibling;
   var count_td = year_td.nextSibling;
   var price_td = count_td.nextSibling;
   var comment_td = price_td.nextSibling;
-  obj.year = year_td.firstChild.value;
-  obj.count = count_td.firstChild.value;
-  obj.price = ParsePrice(price_td.firstChild.value);
-  obj.comment = comment_td.firstChild.value;
-  obj.reason = ReasonAdd();
-  obj.only_existing = ShowOnlyExisting();
+  return CollectInputValues(obj, year_td.firstChild, count_td.firstChild,
+                            price_td.firstChild, comment_td.firstChild);
 }
 
 function ClickAddYear(event) {
@@ -315,8 +349,9 @@ function ClickAddYear(event) {
   var vineyard_td = tr.firstChild;
   var wine_td = vineyard_td.nextSibling;
   var options = {wine_id};
-  CollectFields(wine_td, options);
-  SendPost("add_year", PopulateList_Callback, options);
+  if (CollectFields(wine_td, options)) {
+    SendPost("add_year", PopulateList_Callback, options);
+  }
 }
 
 function ClickAddWine(event) {
@@ -326,8 +361,13 @@ function ClickAddWine(event) {
   var wine_td = vineyard_td.nextSibling;
   var wine = wine_td.firstChild.value;
   var options = {vineyard_id, wine};
-  CollectFields(wine_td, options);
-  SendPost("add_wine", PopulateList_Callback, options);
+  if (wine === "") {
+    alert(kLang.invalid_wine);
+    return;
+  }
+  if (CollectFields(wine_td, options)) {
+    SendPost("add_wine", PopulateList_Callback, options);
+  }
 }
 
 function ClickRating(event) {
@@ -520,9 +560,10 @@ function AppendEditModeRow(edit_mode, winelist, what, parent_id) {
     callback = ClickAddWine;
     AppendInputTd(tr, "neuer Wein");
   }
-  AppendInputTd(tr, "Jahr", 4);
-  AppendInputTd(tr, "Anzahl", 8);
-  AppendInputTd(tr, "Preis", 4);
+  AppendInputTd(tr, "Jahr", 1900, 2200, 1);
+  AppendInputTd(tr, "Anzahl", 0, 9999, 1);
+  var price_input = AppendInputTd(tr, "Preis");
+  price_input.pattern = kPricePattern;
   AppendInputTd(tr, "Kommentar");
   var button_td = document.createElement("td");
   var button_add = document.createElement("button");
@@ -649,13 +690,19 @@ function AddWine() {
   var data = {
     vineyard: vineyard_input.value,
     wine: wine_input.value,
-    year: year_input.value,
-    count: count_input.value,
-    price: ParsePrice(price_input.value),
-    comment: comment_input.value,
-    reason: ReasonAdd(),
-    only_existing: ShowOnlyExisting()
   };
+  if (data.vineyard === "") {
+    alert(kLang.invalid_vineyard);
+    return;
+  }
+  if (data.wine === "") {
+    alert(kLang.invalid_wine);
+    return;
+  }
+  if (!CollectInputValues(data, year_input, count_input, price_input,
+                          comment_input)) {
+    return;
+  }
   SendPost("add_all", PopulateList_Callback, data);
   vineyard_input.value = "";
   wine_input.value = "";

@@ -92,7 +92,6 @@ table.winelist > tbody > tr > td {
 }
 
 table.winelist > tbody > tr > td > input {
-  background-color: #ffffe0;
   border: 0px;
   font-size: 12pt;
   margin: -3px;
@@ -101,12 +100,17 @@ table.winelist > tbody > tr > td > input {
 }
 
 table.winelist > tfoot > tr > td > input {
-  background-color: #ffffe0;
   border: 0px;
   font-size: 12pt;
   margin: 10px 0px -1px 0px;
   padding: 5px;
   width: 100%;
+}
+input.edit {
+  background-color: #ffffe0;
+}
+input.edit:invalid {
+  background-color: #ffaaaa;
 }
 
 table.winelist > tfoot > tr > td > fieldset {

@@ -20,6 +20,7 @@ function start() {
   document.getElementById("log_count").onchange = PopulateLog;
   document.getElementById("stock_reset_all").onclick = ClickResetAllStock;
   document.getElementById("stock_apply_all").onclick = ClickApplyAll;
+  document.getElementById("add_price").setAttribute("pattern", kPricePattern);
   g_VineyardEdit.Init();
   g_WineEdit.Init();
   PopulateDefaultReasons();
@@ -84,10 +85,12 @@ function start() {
     <datalist id="wines_completions"></datalist>
   </td>
   <td>
-    <input type="text" id="add_year" placeholder="Jahr" class="edit" size="4">
+    <input type="number" id="add_year" placeholder="Jahr" class="edit"
+        min="1900" max="2200" step="1">
   </td>
   <td>
-    <input type="text" id="add_count" placeholder="Anzahl" class="edit" size="8">
+    <input type="number" id="add_count" placeholder="Anzahl" class="edit"
+        min="0" max="9999" step="1">
   </td>
   <td>
     <input type="text" id="add_price" placeholder="Preis" class="edit" size="4">

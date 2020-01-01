@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS years (
   year INTEGER,
   count INTEGER,
   stock INTEGER DEFAULT 0,
-  price INTEGER,
+  price REAL DEFAULT 0,
   rating REAL DEFAULT 0,
   value REAL DEFAULT 0,
   sweetness REAL DEFAULT 0,
