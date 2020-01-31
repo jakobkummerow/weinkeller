@@ -2,7 +2,11 @@ from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
+import selectors
+import socket
+import ssl
 import threading
+import time
 import urllib
 
 from .manager import Manager
@@ -12,11 +16,12 @@ class WineHandler(BaseHTTPRequestHandler):
   def __init__(self, request, client_address, server):
     self._server = server
     self._basedir = server.basedir
-    BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+    super().__init__(request, client_address, server)
 
   def _set_headers(self, content_type):
     self.send_response(200)
-    self.send_header("Content-type", content_type)
+    self.send_header("Content-Type", content_type)
+    self.send_header("Access-Control-Allow-Origin", self._origin)
     self.end_headers()
 
   def _send_json(self, data):
@@ -24,9 +29,15 @@ class WineHandler(BaseHTTPRequestHandler):
     response = urllib.parse.quote(json.dumps(data, sort_keys=True))
     self.wfile.write(response.encode("utf-8"))
 
+  def _send_json2(self, data):
+    self._set_headers("application/json")
+    self.wfile.write(json.dumps(data, sort_keys=True).encode("utf-8"))
+
   def do_GET(self):
     parsed_path = urllib.parse.urlparse(self.path)
     path = parsed_path.path
+    # We are fine with CORS requests.
+    self._origin = self.headers['Origin']
 
     if path == "/":
       user_agent = self.headers['user-agent'].lower()
@@ -36,15 +47,19 @@ class WineHandler(BaseHTTPRequestHandler):
         path = "/index.html"
     elif path == "/m":
       path = "/mobile.html"
+    elif path == "/v2":
+      path = "/index2.html"
 
     try:
       mimetype = None
       if path.endswith(".html"):
         mimetype = "text/html; charset=utf-8"
-      elif path.endswith(".js"):
+      elif path.endswith(".js") or path.endswith(".js.map"):
         mimetype = "text/javascript"
       elif path.endswith(".css"):
         mimetype = "text/css"
+      elif path.endswith(".ts"):
+        mimetype = "application/x-typescript"
       if mimetype is not None:
         self._set_headers(mimetype)
         with open(self._basedir + path, "r") as f:
@@ -60,7 +75,11 @@ class WineHandler(BaseHTTPRequestHandler):
     raw_query = parsed_path.query
     query = urllib.parse.parse_qs(raw_query)
 
-    if path == "/get_all":
+    if path == "/api/get":
+      client_knows_commit = query["last_commit"][0]
+      self._send_json2(self._server.manager.GetAll2(client_knows_commit))
+
+    elif path == "/get_all":
       only_existing = query["only_existing"][0]
       self._send_json(self._server.manager.GetAll(only_existing))
 
@@ -101,7 +120,7 @@ class WineHandler(BaseHTTPRequestHandler):
     elif path == "/get_totals":
       self._send_json(self._server.manager.GetTotals())
 
-    elif path == "/export":
+    elif path == "/export" or path == "/api/export":
       self.send_response(200)
       self.send_header("Content-type", "text/csv")
       filename = "wines-%s.csv" % date.today()
@@ -120,12 +139,25 @@ class WineHandler(BaseHTTPRequestHandler):
     return default
 
   def do_POST(self):
+    # We are fine with CORS requests.
+    self._origin = self.headers['Origin']
     content_length = int(self.headers['Content-Length'])
     raw = str(self.rfile.read(content_length), encoding='utf-8')
-    self._post_data = urllib.parse.parse_qs(raw)
+    content_type = self.headers['Content-Type']
+    if content_type == "application/x-www-form-urlencoded":
+      # The v1 way of doing things.
+      self._post_data = urllib.parse.parse_qs(raw)
+    elif content_type == "application/json":
+      # The v2 way of doing things.
+      post_data = json.loads(raw)
     # print("post data: %s" % self._post_data)
 
-    if self.path == "/add_all":
+    if self.path == "/api/set":
+      print("request: %s" % post_data)
+      response = self._server.manager.Set(post_data)
+      self._send_json2(response)
+
+    elif self.path == "/add_all":
       vineyard = self._get_post_data("vineyard")
       wine = self._get_post_data("wine")
       year = self._get_post_data("year")
@@ -256,15 +288,20 @@ class WineHandler(BaseHTTPRequestHandler):
       self._send_json(response)
 
 class WineServer(HTTPServer):
-  def __init__(self, server_address, basedir):
-    HTTPServer.__init__(self, server_address, WineHandler)
+  def __init__(self, port, db_file, basedir):
+    super().__init__(('', port), WineHandler)
     self.manager = None
+    self.db_file = db_file
     self.basedir = basedir
     self.shutdown_done = threading.Event()
 
-  def Run(self):
-    db_file = os.path.join(self.basedir, "wines.sqlite3")
-    self.manager = Manager(db_file)
+  def Start(self):
+    self.thread = threading.Thread(target=self._Run)
+    self.thread.daemon = True
+    self.thread.start()
+
+  def _Run(self):
+    self.manager = Manager(self.db_file)
     print("Server läuft auf Port %d" % self.server_address[1])
     try:
       self.serve_forever()

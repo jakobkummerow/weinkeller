@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+      "outDir": "./js",
+      "alwaysStrict": true,
+      "module": "None",
+      "noImplicitAny": true,
+      "noImplicitThis": true,
+      "sourceMap": true,
+      "strictNullChecks": true,
+      "target": "ES2019"
+  },
+  "include": [
+      "./src/**/*"
+  ]
+}

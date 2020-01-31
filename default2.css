@@ -1,0 +1,332 @@
+body {
+  background-color: #ECEFF1;
+  font-family: Arial;
+  font-size: 12pt;
+  padding-right: 200px; /* sidebar.width + 2 * sidebar.padding */
+}
+
+select {
+  font-size: 12pt;
+}
+
+.sidebar {
+  height: 100%;
+  width: 180px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  background-color: #4c9de9;
+  overflow-x: hidden;
+  padding: 10px;
+  box-shadow: -2px 0px 2px #aaa;
+}
+.sidebar input[type='checkbox'] {
+  margin-left: -1.4em;
+}
+.sidebar label {
+  display: inline-block;
+  margin-left: 1.4em;
+}
+.setting {
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  box-shadow: 2px 2px 2px #68a;
+  margin: 2px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+.setting button.minus,
+.setting button.apply,
+.setting button {
+  font-size: 10pt;
+  font-weight: normal;
+  margin: 2px;
+  width: 97%;
+}
+.setting select {
+  margin-top: 5px;
+}
+
+.checked, .error {
+  background-color: #FFA726;
+  border: 1px solid #EF6C00;
+}
+
+button.plus, button.minus {
+  font-weight: bold;
+}
+button {
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 12pt;
+  padding: 3px 8px;
+}
+button.plus {
+  border-color: #3b933f;
+  background: linear-gradient(to bottom, #60ef67, #3b933f);
+  box-shadow: #59dd5f 0px 0px 2px 1px;
+  text-shadow: #255c28 1px 1px 1px;
+  color: #000000;
+  margin-left: 10px;
+  margin-right: 2px;
+}
+button.plus:hover {
+  box-shadow: #59dd5f 0px 0px 3px 2px;
+}
+button.plus:active {
+  background: linear-gradient(to top, #60ef67, #3b933f);
+}
+
+button.minus {
+  border-color: #bf4240;
+  background: linear-gradient(to bottom, #ff6b68, #bf4240);
+  box-shadow: #ff6260 0px 0px 2px 1px;
+  text-shadow: #782928 1px 1px 1px;
+  color: #000000;
+}
+button.minus:hover {
+  box-shadow: #ff6260 0px 0px 3px 2px;
+}
+button.minus:active {
+  background: linear-gradient(to top, #ff6b68, #bf4240);
+}
+
+button.edit {
+  border-color: #b3a73e;
+  background: linear-gradient(to bottom, #ffee58, #b3a73e);
+  box-shadow: #ffff1e 0px 0px 2px 1px;
+  text-shadow: #ffff21 1px 1px 1px;
+  color: #000000;
+}
+button.edit:hover {
+  box-shadow: #ffff1e 0px 0px 4px 2px;
+}
+button.edit:active {
+  background: linear-gradient(to top, #ffee58, #b3a73e);
+}
+
+button.add, button.apply {
+  border-color: #1a4283;
+  background: linear-gradient(to bottom, #307df6, #1a4283);
+  box-shadow: #3a96ff 0px 0px 2px 1px;
+  text-shadow: #0f274d 1px 1px 1px;
+  color: #ffffff;
+}
+button.add:hover, button.apply:hover {
+  box-shadow: #3a96ff 0px 0px 3px 2px;
+}
+button.add:active, button.apply:active {
+  background: linear-gradient(to top, #307df6, #1a4283);
+}
+
+button.apply {
+  margin-left: 10px;
+}
+
+button.generic {
+  border-color: #9faeb3;
+  background: linear-gradient(to bottom, #f5fdff, #9faeb3);
+  box-shadow: #c0e9f0 0px 0px 2px 1px;
+  text-shadow: #ffffff 1px 1px 1px;
+  color: #000000;
+}
+button.generic:hover {
+  box-shadow: #c0e9f0 0px 0px 3px 2px;
+}
+button.generic:active {
+  background: linear-gradient(to top, #f5fdff, #9faeb3);
+}
+
+.winelistcontainer, .loglistcontainer {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 2px 2px 2px #aaa;
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  width: fit-content;
+}
+.winelist, .loglist {
+  border-collapse: collapse;
+}
+
+.winelist > tbody > tr > td,
+.loglist > tbody > tr > td {
+  border-bottom: 1px solid #e0e0e0;
+  border-top: 1px solid #e0e0e0;
+}
+td.vineyard, td.wine {
+  cursor: hand;
+}
+.winelist > thead > tr > td {
+  cursor: hand;
+  font-weight: bold;
+  padding: 6px 3px 10px 3px;
+}
+
+.winelist > tbody > tr > td,
+.winelist > tfoot > tr > td {
+  max-width: 300px;
+  padding: 3px;
+  padding-left: 6px;
+  padding-right: 0px;
+}
+.winelist > tfoot > tr > td {
+  padding-top: 10px;
+}
+.winelist > tfoot > tr > td:first-child {
+  padding-left: 6px;
+}
+
+.winelist input {
+  margin: -1px 0px -1px -5px;  /* top, right, bottom, left */
+}
+input.edit, textarea.edit {
+  background-color: #ffffe0;
+  border: 1px solid #FFED85;
+  font-family: Arial;
+  font-size: 12pt;
+  padding: 4px;
+  width: 100%;
+}
+input.edit:invalid {
+  background-color: #ffaaaa;
+  border: 1px solid #ed8585;
+}
+td.highlight, .dirty {
+  background-color: #d9e6ff;
+}
+
+.logheader {
+  margin-bottom: 20px;
+}
+.loglist td {
+  padding: 5px 10px;
+}
+.loglist > thead td {
+  font-weight: bold;
+}
+
+select.reason {
+  background-color: white;
+  border: 0px;
+  margin-left: 2px;
+  width: 16px;
+}
+
+/* Vineyard / Wine edit dialogs */
+div.edit_background {
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: 10000;
+}
+div.edit_container {
+  background-color: #4c9de9; /* same as Sidebar */
+  border: 2px solid #254d73;
+  border-radius: 8px;
+  box-shadow: 10px 10px 60px #555;
+  cursor: default;
+  display: inline-block;
+  height: auto;
+  max-width: 50%;
+  padding: 2%;
+  position: relative;
+  vertical-align: middle;
+}
+table.edit_table > tr > td {
+  padding: 4px;
+  vertical-align: top;
+}
+table.edit_table > tr > td > button {
+  font-size: 10pt;
+  margin: 15px 3px;
+  padding: 5px 15px;
+}
+table.edit_table > tr > td > input.edit {
+  margin-top: -5px;
+}
+table.edit_table {
+  background: white;
+  border: 2px solid #336a9e;
+  border-radius: 6px;
+  display: inline-block;
+  padding: 10px;
+}
+.edit_helper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+td.label {
+  text-align: right;
+  vertical-align: top;
+  width: 50%;
+}
+
+/* Five-star ratings */
+.rating {
+  border: none;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+.rating > input {
+  display: none;
+}
+.rating > label:before {
+  content: "★";
+  display: inline-block;
+  font-size: 18pt;
+  margin: -2px;
+}
+.rating > label {
+  color: #f0f0f0;
+  float: right;
+}
+
+.rating:not(:hover) > input:checked ~ label {
+  color: #FFD700;
+}
+.rating:not(:hover) > input.fivestar:checked ~ label {
+  text-shadow: 0px 0px 3px #FFED85;
+}
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+  color: #FFED85;
+}
+
+/* Connection UI */
+.connectionui > div:first-child {
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.connectionui, .connectionui button {
+  font-size: 10pt;
+}
+.table {
+  width: 100%;
+}
+.table > div {
+  display: table-row;
+  width: 100%;
+}
+.table > div > span {
+  display: table-cell;
+  width: 50%;
+}
+.connectionui button {
+  margin-top: 10px;
+}
