@@ -8,6 +8,7 @@ enum GrapeColor {
 }
 
 const kKnownGrapes: any = {
+  "Auxerrois": GrapeColor.kWhite,
   "Bacchus": GrapeColor.kWhite,
   "Cabernet Sauvignon": GrapeColor.kRed,
   "Chardonnay": GrapeColor.kWhite,
@@ -30,12 +31,18 @@ const kKnownGrapes: any = {
   "Spätburgunder": GrapeColor.kRed,
   "Syrah": GrapeColor.kRed,
   "Trollinger": GrapeColor.kRed,
+  "Viognier": GrapeColor.kWhite,
   "Weißburgunder": GrapeColor.kWhite,
+  "Zweigelt": GrapeColor.kRed,
 };
 
 const kGrapeGuesses: any = {
   'Grauer Burgunder': 'Grauburgunder',
   'Klingelberg': 'Riesling',  // Implicitly covers "Klingelberger".
+  'Pinot Blanc': 'Weißburgunder',
+  'Pinot Gris': 'Grauburgunder',
+  'Pinot Grigio': 'Grauburgunder',
+  'Pinot Noir': 'Spätburgunder',
   'Weißer Burgunder': 'Weißburgunder',
 };
 
