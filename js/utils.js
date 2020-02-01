@@ -7,6 +7,7 @@ var GrapeColor;
     GrapeColor["kAny"] = "any";
 })(GrapeColor || (GrapeColor = {}));
 const kKnownGrapes = {
+    "Auxerrois": GrapeColor.kWhite,
     "Bacchus": GrapeColor.kWhite,
     "Cabernet Sauvignon": GrapeColor.kRed,
     "Chardonnay": GrapeColor.kWhite,
@@ -29,11 +30,17 @@ const kKnownGrapes = {
     "Spätburgunder": GrapeColor.kRed,
     "Syrah": GrapeColor.kRed,
     "Trollinger": GrapeColor.kRed,
+    "Viognier": GrapeColor.kWhite,
     "Weißburgunder": GrapeColor.kWhite,
+    "Zweigelt": GrapeColor.kRed,
 };
 const kGrapeGuesses = {
     'Grauer Burgunder': 'Grauburgunder',
     'Klingelberg': 'Riesling',
+    'Pinot Blanc': 'Weißburgunder',
+    'Pinot Gris': 'Grauburgunder',
+    'Pinot Grigio': 'Grauburgunder',
+    'Pinot Noir': 'Spätburgunder',
     'Weißer Burgunder': 'Weißburgunder',
 };
 function GuessGrapeForWine(wine) {
