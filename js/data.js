@@ -822,7 +822,8 @@ class DataStore {
         }
         if (data.isDirty())
             this.dataChanged();
-        g_watchpoints.totals.notifyDelta(data.count * data.price, data.count);
+        // We're not calling g_watchpoints.totals.notifyDelta here because
+        // {this.ui.addYear} already took care of updating the UI as needed.
         return y;
     }
     createLogWithId(data, id) {
