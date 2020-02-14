@@ -256,15 +256,19 @@ class StockTD extends BaseCountTD {
 }
 
 abstract class EditableTD {
-  private td = document.createElement('td');
+  protected td = document.createElement('td');
+  protected div = document.createElement('div');
   protected input: HTMLInputElement | null = null;
 
-  constructor(public year: Year) {}
+  constructor(public year: Year) {
+    this.td.appendChild(this.div);
+    this.div.className = 'editable';
+  }
   protected abstract readData(): string;
   protected configureInput(input: HTMLInputElement): void {}
 
   create() { return this.td; }
-  update() { SetText(this.td, this.readData()); }
+  update() { SetText(this.div, this.readData()); }
 
   startEditing(keyup_handler: (event: KeyboardEvent) => void) {
     if (this.input === null) {
@@ -277,11 +281,17 @@ abstract class EditableTD {
     this.input.value = this.readData();
     this.td.replaceChild(this.input, this.td.firstChild as Node);
   }
-  stopEditing() { this.update(); }
+  stopEditing() {
+    this.td.replaceChild(this.div, this.td.firstChild as Node);
+    this.update();
+  }
 }
 
 class PriceTD extends EditableTD {
-  constructor(year: Year) { super(year); }
+  constructor(year: Year) {
+    super(year);
+    this.td.className = 'price';
+  }
   isValid() {
     if (!this.input) throw "must startEditing() before calling isValid()";
     return this.input.reportValidity();
@@ -293,7 +303,7 @@ class PriceTD extends EditableTD {
   protected readData() { return FormatPrice(this.year.data.price); }
   protected configureInput(input: HTMLInputElement) {
     input.pattern = kPricePattern;
-    input.size = 4;
+    input.classList.add('price');
   }
 }
 
@@ -618,12 +628,14 @@ class WineInputTD extends InputTD {
 }
 
 class IntegerInputTD extends InputTD {
-  constructor(placeholder: string, min: string, max: string) {
+  constructor(
+      placeholder: string, min: string, max: string, className: string) {
     super(placeholder);
     this.input.type = 'number';
     this.input.min = min;
     this.input.max = max;
     this.input.step = "1";
+    this.input.classList.add(className);
   }
   isValid() {
     return this.input.value !== "" && this.input.reportValidity();
@@ -636,8 +648,9 @@ class IntegerInputTD extends InputTD {
 class PriceInputTD extends InputTD {
   constructor() {
     super(kLang.price);
+    this.td.classList.add('price');
     this.input.pattern = kPricePattern;
-    this.input.size = 4;
+    this.input.classList.add('price');
   }
   isValid() {
     return this.input.reportValidity();
@@ -667,8 +680,8 @@ class EditTR extends HideableTR {
   // TODO: factor into EditTrContents and create lazily on first show()?
   vineyard_td: VineyardInputTD | null = null;
   wine_td: WineInputTD | null = null;
-  year = new IntegerInputTD(kLang.year, "1900", "2200");
-  count = new IntegerInputTD(kLang.count, "0", "9999");
+  year = new IntegerInputTD(kLang.year, "1900", "2200", 'year');
+  count = new IntegerInputTD(kLang.count, "0", "9999", 'count');
   stock = new EmptyTD();
   price = new PriceInputTD();
   comment = new InputTD(kLang.comment);

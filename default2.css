@@ -173,8 +173,6 @@ td.vineyard, td.wine {
 .winelist > tfoot > tr > td {
   max-width: 300px;
   padding: 3px;
-  padding-left: 6px;
-  padding-right: 0px;
 }
 .winelist > tfoot > tr > td {
   padding-top: 10px;
@@ -183,8 +181,9 @@ td.vineyard, td.wine {
   padding-left: 6px;
 }
 
-.winelist input {
-  margin: -1px 0px -1px -5px;  /* top, right, bottom, left */
+.winelist .editable {
+  margin: 1px; /* instead of border */
+  padding: 4px; /* same as input.edit below */
 }
 input.edit, textarea.edit {
   background-color: #ffffe0;
@@ -200,6 +199,23 @@ input.edit:invalid {
 }
 td.highlight, .dirty {
   background-color: #d9e6ff;
+}
+.winelist tr td.price {
+  text-align: right;
+}
+input.count {
+  width: 6rem;
+}
+input.price {
+  text-align: right;
+  width: 4rem;
+}
+input.year {
+  appearance: textfield; /* for Firefox */
+  width: 4rem;
+}
+input.year::-webkit-inner-spin-button { /* for Chrome */
+  -webkit-appearance: none;
 }
 
 .logheader {
