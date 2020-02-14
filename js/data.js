@@ -368,8 +368,9 @@ class Year extends DataWrapper {
     editPriceComment(new_price, new_comment) {
         let price_changed = false, comment_changed = false;
         let price_delta = 0;
-        if (this.data.price !== new_price) {
-            price_delta = new_price - this.data.price;
+        let old_price = this.data.price;
+        if (old_price !== new_price) {
+            price_delta = new_price - old_price;
             this.data.price = new_price;
             price_changed = true;
         }

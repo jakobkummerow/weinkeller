@@ -230,6 +230,12 @@ class Connection {
       let added_wine = false;
       for (let w of response.wines) {
         let vineyard = this.data.vineyards_by_server_id.get(w.vineyard_id);
+        if (!vineyard) {
+          console.warn(
+              'Warning: server sent us a wine for nonexistent vineyard:');
+          console.warn(w);
+          continue;
+        }
         if (!vineyard) throw 'bug: must add vineyards before wines!';
         w.vineyard_id = vineyard.local_id;
         let existing = this.data.wines_by_server_id.get(w.server_id);
@@ -246,7 +252,11 @@ class Connection {
       let added_year = false;
       for (let year of response.years) {
         let wine = this.data.wines_by_server_id.get(year.wine_id);
-        if (!wine) throw 'bug: must add wines before years!';
+        if (!wine) {
+          console.warn('Warning: server sent us a year for nonexistent wine:');
+          console.warn(year);
+          continue;
+        }
         year.wine_id = wine.local_id;
         let existing = this.data.years_by_server_id.get(year.server_id);
         if (existing) {
@@ -262,7 +272,12 @@ class Connection {
       let added_log = false;
       for (let log of response.log) {
         let year = this.data.years_by_server_id.get(log.year_id);
-        if (!year) throw 'bug: must add years before log!';
+        if (!year) {
+          console.warn(
+              'Warning: server sent us a log entry for nonexistent year:');
+          console.warn(log);
+          continue;
+        }
         log.year_id = year.local_id;
         let existing = this.data.log_by_server_id.get(log.server_id);
         if (existing) {
