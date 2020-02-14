@@ -771,6 +771,10 @@ class TotalsTR {
         this.updateText();
     }
     update() {
+        // TODO: This logic is imprecise insofar as it doesn't check whether the
+        // year that the delta refers to is currently displayed or hidden.
+        // Specifically, if only white wines are shown and the server sends an
+        // update about a red wine, this would erroneously update the totals.
         this.total_price += g_watchpoints.totals.priceDelta();
         this.total_count += g_watchpoints.totals.countDelta();
         this.updateText();
@@ -778,6 +782,11 @@ class TotalsTR {
     updateText() {
         SetText(this.count_td, this.total_count.toString());
         SetText(this.price_td, FormatPrice(this.total_price));
+    }
+    updateDisplayedTotals(total_count, total_price) {
+        this.total_count = total_count;
+        this.total_price = total_price;
+        this.updateText();
     }
 }
 var SortMode;
@@ -934,6 +943,8 @@ class TableSorter {
     }
     sortAgain() {
         let list = [];
+        let total_count = 0;
+        let total_price = 0;
         // Hide all edit rows; we'll figure out later which ones are needed.
         for (let edit_row of this.winelist.edit_rows) {
             edit_row.hide();
@@ -943,6 +954,8 @@ class TableSorter {
             if (this.isShown(year)) {
                 row.show();
                 list.push({ row: row, value: this.getter(year) });
+                total_count += year.data.count;
+                total_price += year.data.count * year.data.price;
             }
             else {
                 row.hide();
@@ -998,6 +1011,7 @@ class TableSorter {
                 row.setShowWine(true);
             }
         }
+        this.winelist.updateDisplayedTotals(total_count, total_price);
     }
 }
 class WinelistUI {
@@ -1067,7 +1081,6 @@ class WinelistUI {
             if (vineyard_first)
                 vineyard_edit.hide();
         });
-        this.sorter.sortAgain();
         // Footer.
         let tfoot = AddC(this.table, 'tfoot');
         let add_row = new EditTR(this.data, null, null);
@@ -1075,15 +1088,18 @@ class WinelistUI {
         add_row.stock.hide();
         this.edit_stock_tds.push(add_row.stock);
         tfoot.appendChild(add_row.tr);
-        let totals_row = new TotalsTR(this.data);
-        totals_row.stock.hide();
-        this.edit_stock_tds.push(totals_row.stock);
-        tfoot.appendChild(totals_row.tr);
+        this.totals = new TotalsTR(this.data);
+        this.totals.stock.hide();
+        this.edit_stock_tds.push(this.totals.stock);
+        tfoot.appendChild(this.totals.tr);
+        // Sidebar.
         this.sidebar.create();
         this.setStockMode(false);
         // Log.
         this.log = new LogUI(this.data);
         this.log.create();
+        // Side effect: populate totals row.
+        this.sorter.sortAgain();
     }
     addYear(year) {
         this.addYearTR(year, false, false);
@@ -1172,6 +1188,9 @@ class WinelistUI {
     }
     setGrapeFilter(grape_filter) {
         this.sorter.setGrapeFilter(grape_filter);
+    }
+    updateDisplayedTotals(total_count, total_price) {
+        this.totals.updateDisplayedTotals(total_count, total_price);
     }
 }
 //# sourceMappingURL=ui.js.map
