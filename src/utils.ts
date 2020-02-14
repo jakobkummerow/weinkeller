@@ -23,6 +23,7 @@ const kKnownGrapes: any = {
   "Müller-Thurgau": GrapeColor.kWhite,
   "Regent": GrapeColor.kRed,
   "Riesling": GrapeColor.kWhite,
+  "Rioja": GrapeColor.kRed,
   "Sauvignon Blanc": GrapeColor.kWhite,
   "Scheurebe": GrapeColor.kWhite,
   "Schwarzriesling": GrapeColor.kRed,
@@ -34,6 +35,9 @@ const kKnownGrapes: any = {
   "Viognier": GrapeColor.kWhite,
   "Weißburgunder": GrapeColor.kWhite,
   "Zweigelt": GrapeColor.kRed,
+  // Escape hatch: when in doubt, just say "white"/"red" grape.
+  "rot": GrapeColor.kRed,
+  "weiß": GrapeColor.kWhite,
 };
 
 const kGrapeGuesses: any = {
