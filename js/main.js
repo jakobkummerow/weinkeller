@@ -5,8 +5,8 @@ let g_vineyard_editor;
 let g_wine_editor;
 function winelist_main() {
     g_data = new DataStore();
-    let ui = new WinelistUI(g_data);
     g_connection = new Connection(g_data);
+    let ui = new WinelistUI(g_data);
     g_vineyard_editor = new VineyardEditor(g_data);
     g_wine_editor = new WineEditor(g_data);
     g_data.initializeFromDatabase()

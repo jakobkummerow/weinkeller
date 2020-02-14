@@ -1043,7 +1043,7 @@ class WinelistUI {
     container.appendChild(this.table);
     container.className = "winelistcontainer";
     this.table.className = "winelist";
-    this.sidebar = new Sidebar(this);
+    this.sidebar = new Sidebar(this, g_connection);
   }
 
   private addHeaderTD(

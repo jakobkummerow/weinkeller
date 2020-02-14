@@ -5,6 +5,14 @@ var Result;
     Result[Result["kError"] = 1] = "kError";
 })(Result || (Result = {}));
 ;
+var RequestType;
+(function (RequestType) {
+    RequestType[RequestType["kNone"] = 0] = "kNone";
+    RequestType[RequestType["kManualSync"] = 1] = "kManualSync";
+    RequestType[RequestType["kFetchAll"] = 2] = "kFetchAll";
+    RequestType[RequestType["kPushAll"] = 4] = "kPushAll";
+})(RequestType || (RequestType = {}));
+;
 const kSeconds = 1000; // Milliseconds.
 const kMinutes = 60 * kSeconds;
 const kHours = 60 * kMinutes;
@@ -19,10 +27,11 @@ class Connection {
         this.last_success = 0;
         this.next_ping = 0;
         this.delay = 0;
-        this.torch = 0;
+        this.next_tick = 0;
         this.callback = () => { this.entryPoint(); };
         this.last_commit = 0;
         this.prefix = "";
+        this.queued_requests = 0;
         data.connection = this;
     }
     start() {
@@ -33,16 +42,18 @@ class Connection {
         this.prefix = prefix;
     }
     // Call this to notify the Connection that there is an update to be sent.
-    kick(manually_triggered = false) {
-        if (manually_triggered || this.last_result === Result.kSuccess) {
-            if (this.torch === 0) {
+    kick(request_type = RequestType.kNone) {
+        if (request_type !== RequestType.kNone ||
+            this.last_result === Result.kSuccess) {
+            this.queued_requests |= request_type;
+            if (this.next_tick === 0) {
                 // There's currently a request in flight.
                 this.delay = 0;
             }
             else {
                 // We're currently waiting for the next scheduled activity.
-                window.clearTimeout(this.torch);
-                this.torch = 0;
+                window.clearTimeout(this.next_tick);
+                this.next_tick = 0;
                 this.entryPoint();
             }
         }
@@ -84,10 +95,22 @@ class Connection {
     }
     loop() {
         this.next_ping = Date.now() + this.delay;
-        this.torch = window.setTimeout(this.callback, this.delay);
+        let delay = this.queued_requests !== RequestType.kNone ? 0 : this.delay;
+        this.next_tick = window.setTimeout(this.callback, delay);
     }
     entryPoint() {
-        this.torch = 0;
+        this.next_tick = 0;
+        if (this.queued_requests & RequestType.kFetchAll) {
+            console.log('Special request: FetchAll');
+            this.queued_requests &= ~RequestType.kFetchAll;
+            return this.sendGet('api/get', { last_commit: 0 });
+        }
+        if (this.queued_requests & RequestType.kPushAll) {
+            console.log('Special request: PushAll');
+            this.queued_requests &= ~RequestType.kPushAll;
+            return this.pushAll();
+        }
+        this.queued_requests &= ~RequestType.kManualSync;
         let updates = this.findWork();
         if (updates !== null) {
             console.log('Sending updates to server');
@@ -117,7 +140,7 @@ class Connection {
     findWork() {
         if (!this.data.global_dirtybit)
             return null;
-        const kMax = 1; // TODO: bump!
+        const kMax = 2; // TODO: bump!
         let vineyards = [];
         for (let v of this.data.vineyards) {
             if (!v)
@@ -180,6 +203,42 @@ class Connection {
             return { log };
         this.data.global_dirtybit = false;
         return null;
+    }
+    // Like findWork, but ignores dirty bits and sends everything.
+    pushAll() {
+        let vineyards = [];
+        for (let v of this.data.vineyards) {
+            if (!v)
+                continue;
+            vineyards.push(v.data.packForSync(v.local_id));
+        }
+        if (vineyards.length > 0)
+            return { vineyards };
+        let wines = [];
+        for (let w of this.data.wines) {
+            if (!w)
+                continue;
+            let pack = w.data.packForSync(w.local_id);
+            pack.vineyard_id = w.vineyard.data.server_id;
+            wines.push(pack);
+        }
+        let years = [];
+        for (let y of this.data.years) {
+            if (!y)
+                continue;
+            let pack = y.data.packForSync(y.local_id);
+            pack.wine_id = y.wine.data.server_id;
+            years.push(pack);
+        }
+        let log = [];
+        for (let l of this.data.log) {
+            if (!l)
+                continue;
+            let pack = l.data.packForSync(l.local_id);
+            pack.year_id = l.year.data.server_id;
+            log.push(pack);
+        }
+        return this.sendPost({ vineyards, wines, years, log });
     }
     processReceipts(receipts) {
         if (!receipts)

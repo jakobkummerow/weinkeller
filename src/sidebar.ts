@@ -27,6 +27,12 @@ var kSideLang = {
     12: "Verschenkt",
     13: "Verlust",
   },
+  special_tools: "Spezial-Tools",
+  forget_all: "Lokale Daten löschen",
+  forget_all_sure: "Dies löscht alle lokal gespeicherten Daten und holt sie " +
+                   "neu vom Server. Sicher?",
+  refetch_all: "Alles neu laden",
+  push_all: "Alles neu senden",
 };
 
 function IsValidReasonFor(reason: number, delta: number) {
@@ -37,6 +43,15 @@ function IsValidReasonFor(reason: number, delta: number) {
 
 function FormatReason(int: number): string {
   return (kSideLang.reasons as any)[int];
+}
+
+function AddButton(parent: Node, label: string, className: string,
+                   onclick: (ev: MouseEvent) => any) {
+  let div = AddC(parent, 'div');
+  let button = AddC(div, 'button');
+  AddT(button, label);
+  button.className = className;
+  button.onclick = onclick;
 }
 
 class Sidebar {
@@ -51,8 +66,11 @@ class Sidebar {
   private grape_select = document.createElement('select');
   private reason_add_select = document.createElement('select');
   private reason_remove_select = document.createElement('select');
+  private special_tools_div = document.createElement('div');
+  private special_tools_mode = document.createElement('input');
+  private special_tools_buttons = document.createElement('span');
 
-  constructor(private winelist: WinelistUI) {
+  constructor(private winelist: WinelistUI, private connection: Connection) {
     document.body.appendChild(this.div);
     this.div.className = 'sidebar';
   }
@@ -122,39 +140,33 @@ class Sidebar {
     let edit_label = AddC(this.edit_div, 'label');
     edit_label.appendChild(this.edit_mode);
     this.edit_mode.type = 'checkbox';
-    this.edit_div.onclick = (event) => { this.toggleEditMode(); };
+    this.edit_div.onclick = (_) => { this.toggleEditMode(); };
     AddT(edit_label, kSideLang.edit_mode);
 
     // Stock-taking mode.
     this.div.appendChild(this.stock_div);
     this.stock_div.className = 'setting';
+    this.stock_div.onclick = (_) => { this.toggleStockMode(); };
+    this.stock_mode.type = 'checkbox';
     let stock_div = AddC(this.stock_div, 'div');
     let stock_label = AddC(stock_div, 'label');
     stock_label.appendChild(this.stock_mode);
-    this.stock_mode.type = 'checkbox';
-    this.stock_div.onclick = (event) => { this.toggleStockMode(); };
     AddT(stock_label, kSideLang.stock_mode);
     this.stock_div.appendChild(this.stock_buttons);
     this.stock_buttons.style.display = 'none';
-    let apply_div = AddC(this.stock_buttons, 'div');
-    let apply_button = AddC(apply_div, 'button');
-    apply_button.className = 'apply';
-    apply_button.onclick = (event) => {
-      event.stopPropagation();
-      this.applyAllStock();
-    };
-    AddT(apply_button, kSideLang.stock_apply_all);
-    let reset_div = AddC(this.stock_buttons, 'div');
-    let reset_button = AddC(reset_div, 'button');
-    reset_button.className = 'minus';
-    reset_button.onclick = (event) => {
-      event.stopPropagation();
-      this.resetAllStock();
-    };
-    AddT(reset_button, kSideLang.stock_reset_all);
+    AddButton(
+        this.stock_buttons, kSideLang.stock_apply_all, 'apply', (event) => {
+          event.stopPropagation();
+          this.applyAllStock();
+        });
+    AddButton(
+        this.stock_buttons, kSideLang.stock_reset_all, 'minus', (event) => {
+          event.stopPropagation();
+          this.resetAllStock();
+        });
 
     // Connection status.
-    let conn_status = new ConnectionUI(g_connection);
+    let conn_status = new ConnectionUI(this.connection);
     this.div.appendChild(conn_status.create());
 
     // CSV export link.
@@ -162,6 +174,57 @@ class Sidebar {
     let link = AddC(link_container, 'a');
     link.href = '/api/export';
     AddT(link, 'CSV-Export');
+
+    // Special tools (for recovery from abnormal situations).
+    this.div.appendChild(this.special_tools_div);
+    this.special_tools_div.className = 'setting';
+    this.special_tools_div.onclick = (_) => { this.toggleSpecialTools(); };
+    this.special_tools_mode.type = 'checkbox';
+    let special_div = AddC(this.special_tools_div, 'div');
+    let special_label = AddC(special_div, 'label');
+    special_label.appendChild(this.special_tools_mode);
+    AddT(special_label, kSideLang.special_tools);
+    this.special_tools_div.appendChild(this.special_tools_buttons);
+    this.special_tools_buttons.style.display = 'none';
+    AddButton(
+        this.special_tools_buttons, kSideLang.forget_all, 'generic',
+        (event) => {
+          event.stopPropagation();
+          this.specialForgetAll();
+        });
+    AddButton(
+        this.special_tools_buttons, kSideLang.refetch_all, 'generic',
+        (event) => {
+          event.stopPropagation();
+          this.specialRefetchAll();
+        });
+    AddButton(
+        this.special_tools_buttons, kSideLang.push_all, 'generic', (event) => {
+          event.stopPropagation();
+          this.specialPushAll();
+        });
+  }
+
+  private toggleSpecialTools() {
+    this.special_tools_mode.checked = !this.special_tools_mode.checked;
+    let special_tools = this.special_tools_mode.checked;
+    if (special_tools) {
+      this.special_tools_div.classList.add('checked');
+      this.special_tools_buttons.style.display = '';
+    } else {
+      this.special_tools_div.classList.remove('checked');
+      this.special_tools_buttons.style.display = 'none';
+    }
+  }
+  private specialForgetAll() {
+    if (!confirm(kSideLang.forget_all_sure)) return;
+    this.winelist.data.clearAll();
+  }
+  private specialRefetchAll() {
+    this.connection.kick(RequestType.kFetchAll);
+  }
+  private specialPushAll() {
+    this.connection.kick(RequestType.kPushAll);
   }
 
   private toggleEditMode() {
@@ -291,12 +354,10 @@ class ConnectionUI {
     this.makeRow(table, kCLang.last_result, this.last_result);
     this.makeRow(table, kCLang.last_success, this.last_success);
     this.makeRow(table, kCLang.next_attempt, this.next_attempt);
+    AddButton(this.box, kCLang.connect_now, 'generic', (_) => {
+      this.connection.kick(RequestType.kManualSync);
+    });
 
-    let button_div = AddC(this.box, 'div');
-    let button = AddC(button_div, 'button');
-    AddT(button, kCLang.connect_now);
-    button.className = 'generic';
-    button.onclick = (_) => { this.connection.kick(true); };
     window.setInterval(() => { this.update(); }, 1000);
     return this.box;
   }

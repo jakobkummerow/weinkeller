@@ -26,6 +26,12 @@ var kSideLang = {
         12: "Verschenkt",
         13: "Verlust",
     },
+    special_tools: "Spezial-Tools",
+    forget_all: "Lokale Daten löschen",
+    forget_all_sure: "Dies löscht alle lokal gespeicherten Daten und holt sie " +
+        "neu vom Server. Sicher?",
+    refetch_all: "Alles neu laden",
+    push_all: "Alles neu senden",
 };
 function IsValidReasonFor(reason, delta) {
     if (delta > 0)
@@ -37,9 +43,17 @@ function IsValidReasonFor(reason, delta) {
 function FormatReason(int) {
     return kSideLang.reasons[int];
 }
+function AddButton(parent, label, className, onclick) {
+    let div = AddC(parent, 'div');
+    let button = AddC(div, 'button');
+    AddT(button, label);
+    button.className = className;
+    button.onclick = onclick;
+}
 class Sidebar {
-    constructor(winelist) {
+    constructor(winelist, connection) {
         this.winelist = winelist;
+        this.connection = connection;
         this.div = document.createElement('div');
         this.edit_div = document.createElement('div');
         this.edit_mode = document.createElement('input');
@@ -51,6 +65,9 @@ class Sidebar {
         this.grape_select = document.createElement('select');
         this.reason_add_select = document.createElement('select');
         this.reason_remove_select = document.createElement('select');
+        this.special_tools_div = document.createElement('div');
+        this.special_tools_mode = document.createElement('input');
+        this.special_tools_buttons = document.createElement('span');
         document.body.appendChild(this.div);
         this.div.className = 'sidebar';
     }
@@ -117,43 +134,81 @@ class Sidebar {
         let edit_label = AddC(this.edit_div, 'label');
         edit_label.appendChild(this.edit_mode);
         this.edit_mode.type = 'checkbox';
-        this.edit_div.onclick = (event) => { this.toggleEditMode(); };
+        this.edit_div.onclick = (_) => { this.toggleEditMode(); };
         AddT(edit_label, kSideLang.edit_mode);
         // Stock-taking mode.
         this.div.appendChild(this.stock_div);
         this.stock_div.className = 'setting';
+        this.stock_div.onclick = (_) => { this.toggleStockMode(); };
+        this.stock_mode.type = 'checkbox';
         let stock_div = AddC(this.stock_div, 'div');
         let stock_label = AddC(stock_div, 'label');
         stock_label.appendChild(this.stock_mode);
-        this.stock_mode.type = 'checkbox';
-        this.stock_div.onclick = (event) => { this.toggleStockMode(); };
         AddT(stock_label, kSideLang.stock_mode);
         this.stock_div.appendChild(this.stock_buttons);
         this.stock_buttons.style.display = 'none';
-        let apply_div = AddC(this.stock_buttons, 'div');
-        let apply_button = AddC(apply_div, 'button');
-        apply_button.className = 'apply';
-        apply_button.onclick = (event) => {
+        AddButton(this.stock_buttons, kSideLang.stock_apply_all, 'apply', (event) => {
             event.stopPropagation();
             this.applyAllStock();
-        };
-        AddT(apply_button, kSideLang.stock_apply_all);
-        let reset_div = AddC(this.stock_buttons, 'div');
-        let reset_button = AddC(reset_div, 'button');
-        reset_button.className = 'minus';
-        reset_button.onclick = (event) => {
+        });
+        AddButton(this.stock_buttons, kSideLang.stock_reset_all, 'minus', (event) => {
             event.stopPropagation();
             this.resetAllStock();
-        };
-        AddT(reset_button, kSideLang.stock_reset_all);
+        });
         // Connection status.
-        let conn_status = new ConnectionUI(g_connection);
+        let conn_status = new ConnectionUI(this.connection);
         this.div.appendChild(conn_status.create());
         // CSV export link.
         let link_container = AddC(this.div, 'p');
         let link = AddC(link_container, 'a');
         link.href = '/api/export';
         AddT(link, 'CSV-Export');
+        // Special tools (for recovery from abnormal situations).
+        this.div.appendChild(this.special_tools_div);
+        this.special_tools_div.className = 'setting';
+        this.special_tools_div.onclick = (_) => { this.toggleSpecialTools(); };
+        this.special_tools_mode.type = 'checkbox';
+        let special_div = AddC(this.special_tools_div, 'div');
+        let special_label = AddC(special_div, 'label');
+        special_label.appendChild(this.special_tools_mode);
+        AddT(special_label, kSideLang.special_tools);
+        this.special_tools_div.appendChild(this.special_tools_buttons);
+        this.special_tools_buttons.style.display = 'none';
+        AddButton(this.special_tools_buttons, kSideLang.forget_all, 'generic', (event) => {
+            event.stopPropagation();
+            this.specialForgetAll();
+        });
+        AddButton(this.special_tools_buttons, kSideLang.refetch_all, 'generic', (event) => {
+            event.stopPropagation();
+            this.specialRefetchAll();
+        });
+        AddButton(this.special_tools_buttons, kSideLang.push_all, 'generic', (event) => {
+            event.stopPropagation();
+            this.specialPushAll();
+        });
+    }
+    toggleSpecialTools() {
+        this.special_tools_mode.checked = !this.special_tools_mode.checked;
+        let special_tools = this.special_tools_mode.checked;
+        if (special_tools) {
+            this.special_tools_div.classList.add('checked');
+            this.special_tools_buttons.style.display = '';
+        }
+        else {
+            this.special_tools_div.classList.remove('checked');
+            this.special_tools_buttons.style.display = 'none';
+        }
+    }
+    specialForgetAll() {
+        if (!confirm(kSideLang.forget_all_sure))
+            return;
+        this.winelist.data.clearAll();
+    }
+    specialRefetchAll() {
+        this.connection.kick(RequestType.kFetchAll);
+    }
+    specialPushAll() {
+        this.connection.kick(RequestType.kPushAll);
     }
     toggleEditMode() {
         this.edit_mode.checked = !this.edit_mode.checked;
@@ -276,11 +331,9 @@ class ConnectionUI {
         this.makeRow(table, kCLang.last_result, this.last_result);
         this.makeRow(table, kCLang.last_success, this.last_success);
         this.makeRow(table, kCLang.next_attempt, this.next_attempt);
-        let button_div = AddC(this.box, 'div');
-        let button = AddC(button_div, 'button');
-        AddT(button, kCLang.connect_now);
-        button.className = 'generic';
-        button.onclick = (_) => { this.connection.kick(true); };
+        AddButton(this.box, kCLang.connect_now, 'generic', (_) => {
+            this.connection.kick(RequestType.kManualSync);
+        });
         window.setInterval(() => { this.update(); }, 1000);
         return this.box;
     }

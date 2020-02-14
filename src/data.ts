@@ -845,4 +845,18 @@ class DataStore {
   getWriteStore(key: string) {
     return this.db.transaction([key], 'readwrite').objectStore(key);
   }
+
+  clearAll() {
+    let tx = this.db.transaction(
+        ['vineyards', 'wines', 'years', 'log', 'data'], 'readwrite');
+    tx.oncomplete = (_) => {
+      console.log('Local database cleared.');
+      window.location.reload();
+    };
+    tx.objectStore('vineyards').clear();
+    tx.objectStore('wines').clear();
+    tx.objectStore('years').clear();
+    tx.objectStore('log').clear();
+    tx.objectStore('data').clear();
+  }
 }
