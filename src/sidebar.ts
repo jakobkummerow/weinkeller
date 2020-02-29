@@ -58,10 +58,13 @@ class Sidebar {
   private div = document.createElement('div');
   private edit_div = document.createElement('div');
   private edit_mode = document.createElement('input');
+  private edit_mode_value = false;
   private stock_div = document.createElement('div');
   private stock_mode = document.createElement('input');
+  private stock_mode_value = false;
   private stock_buttons = document.createElement('span');
   private only_existing = document.createElement('input');
+  private only_existing_value = true;
   private grape_div = document.createElement('div');
   private grape_select = document.createElement('select');
   private reason_add_select = document.createElement('select');
@@ -82,8 +85,8 @@ class Sidebar {
     let existing_label = AddC(existing_div, 'label');
     existing_label.appendChild(this.only_existing);
     this.only_existing.type = 'checkbox';
-    this.only_existing.checked = true;
-    existing_div.onclick = (_) => { this.toggleOnlyExisting(); };
+    this.only_existing.checked = this.only_existing_value;
+    existing_div.onclick = (e) => { this.toggleOnlyExisting(e); };
     AddT(existing_label, kSideLang.only_existing);
 
     // Grapes.
@@ -140,14 +143,16 @@ class Sidebar {
     let edit_label = AddC(this.edit_div, 'label');
     edit_label.appendChild(this.edit_mode);
     this.edit_mode.type = 'checkbox';
-    this.edit_div.onclick = (_) => { this.toggleEditMode(); };
+    this.edit_mode.checked = this.edit_mode_value;
+    this.edit_div.onclick = (e) => { this.toggleEditMode(e); };
     AddT(edit_label, kSideLang.edit_mode);
 
     // Stock-taking mode.
     this.div.appendChild(this.stock_div);
     this.stock_div.className = 'setting';
-    this.stock_div.onclick = (_) => { this.toggleStockMode(); };
+    this.stock_div.onclick = (e) => { this.toggleStockMode(e); };
     this.stock_mode.type = 'checkbox';
+    this.stock_mode.checked = this.stock_mode_value;
     let stock_div = AddC(this.stock_div, 'div');
     let stock_label = AddC(stock_div, 'label');
     stock_label.appendChild(this.stock_mode);
@@ -227,8 +232,9 @@ class Sidebar {
     this.connection.kick(RequestType.kPushAll);
   }
 
-  private toggleEditMode() {
-    this.edit_mode.checked = !this.edit_mode.checked;
+  private toggleEditMode(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName == "LABEL") return;
+    this.edit_mode.checked = this.edit_mode_value = !this.edit_mode_value;
     let edit_mode = this.edit_mode.checked;
     if (edit_mode) {
       this.edit_div.classList.add('checked');
@@ -238,8 +244,9 @@ class Sidebar {
     this.winelist.setEditMode(edit_mode);
   }
 
-  private toggleStockMode() {
-    this.stock_mode.checked = !this.stock_mode.checked;
+  private toggleStockMode(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName == "LABEL") return;
+    this.stock_mode.checked = this.stock_mode_value = !this.stock_mode_value;
     let stock_mode = this.stock_mode.checked;
     if (stock_mode) {
       this.stock_div.classList.add('checked');
@@ -260,9 +267,10 @@ class Sidebar {
     this.winelist.resetAllStock();
   }
 
-  private toggleOnlyExisting() {
-    this.only_existing.checked = !this.only_existing.checked;
-    let only_existing = this.only_existing.checked;
+  private toggleOnlyExisting(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName == "LABEL") return;
+    let only_existing = !this.only_existing_value;
+    this.only_existing.checked = this.only_existing_value = only_existing;
     this.winelist.setOnlyExisting(only_existing);
   }
 

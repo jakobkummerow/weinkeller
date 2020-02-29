@@ -57,10 +57,13 @@ class Sidebar {
         this.div = document.createElement('div');
         this.edit_div = document.createElement('div');
         this.edit_mode = document.createElement('input');
+        this.edit_mode_value = false;
         this.stock_div = document.createElement('div');
         this.stock_mode = document.createElement('input');
+        this.stock_mode_value = false;
         this.stock_buttons = document.createElement('span');
         this.only_existing = document.createElement('input');
+        this.only_existing_value = true;
         this.grape_div = document.createElement('div');
         this.grape_select = document.createElement('select');
         this.reason_add_select = document.createElement('select');
@@ -78,8 +81,8 @@ class Sidebar {
         let existing_label = AddC(existing_div, 'label');
         existing_label.appendChild(this.only_existing);
         this.only_existing.type = 'checkbox';
-        this.only_existing.checked = true;
-        existing_div.onclick = (_) => { this.toggleOnlyExisting(); };
+        this.only_existing.checked = this.only_existing_value;
+        existing_div.onclick = (e) => { this.toggleOnlyExisting(e); };
         AddT(existing_label, kSideLang.only_existing);
         // Grapes.
         this.div.appendChild(this.grape_div);
@@ -134,13 +137,15 @@ class Sidebar {
         let edit_label = AddC(this.edit_div, 'label');
         edit_label.appendChild(this.edit_mode);
         this.edit_mode.type = 'checkbox';
-        this.edit_div.onclick = (_) => { this.toggleEditMode(); };
+        this.edit_mode.checked = this.edit_mode_value;
+        this.edit_div.onclick = (e) => { this.toggleEditMode(e); };
         AddT(edit_label, kSideLang.edit_mode);
         // Stock-taking mode.
         this.div.appendChild(this.stock_div);
         this.stock_div.className = 'setting';
-        this.stock_div.onclick = (_) => { this.toggleStockMode(); };
+        this.stock_div.onclick = (e) => { this.toggleStockMode(e); };
         this.stock_mode.type = 'checkbox';
+        this.stock_mode.checked = this.stock_mode_value;
         let stock_div = AddC(this.stock_div, 'div');
         let stock_label = AddC(stock_div, 'label');
         stock_label.appendChild(this.stock_mode);
@@ -210,8 +215,10 @@ class Sidebar {
     specialPushAll() {
         this.connection.kick(RequestType.kPushAll);
     }
-    toggleEditMode() {
-        this.edit_mode.checked = !this.edit_mode.checked;
+    toggleEditMode(e) {
+        if (e.target.tagName == "LABEL")
+            return;
+        this.edit_mode.checked = this.edit_mode_value = !this.edit_mode_value;
         let edit_mode = this.edit_mode.checked;
         if (edit_mode) {
             this.edit_div.classList.add('checked');
@@ -221,8 +228,10 @@ class Sidebar {
         }
         this.winelist.setEditMode(edit_mode);
     }
-    toggleStockMode() {
-        this.stock_mode.checked = !this.stock_mode.checked;
+    toggleStockMode(e) {
+        if (e.target.tagName == "LABEL")
+            return;
+        this.stock_mode.checked = this.stock_mode_value = !this.stock_mode_value;
         let stock_mode = this.stock_mode.checked;
         if (stock_mode) {
             this.stock_div.classList.add('checked');
@@ -244,9 +253,11 @@ class Sidebar {
             return;
         this.winelist.resetAllStock();
     }
-    toggleOnlyExisting() {
-        this.only_existing.checked = !this.only_existing.checked;
-        let only_existing = this.only_existing.checked;
+    toggleOnlyExisting(e) {
+        if (e.target.tagName == "LABEL")
+            return;
+        let only_existing = !this.only_existing_value;
+        this.only_existing.checked = this.only_existing_value = only_existing;
         this.winelist.setOnlyExisting(only_existing);
     }
     changeGrapeFilter() {
