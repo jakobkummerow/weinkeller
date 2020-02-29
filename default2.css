@@ -95,8 +95,8 @@ button.minus:active {
 }
 
 button.edit {
-  border-color: #b3a73e;
-  background: linear-gradient(to bottom, #ffee58, #b3a73e);
+  border-color: #cf9b21;
+  background: linear-gradient(to bottom, #ffee58, #cf9b21);
   box-shadow: #ffff1e 0px 0px 2px 1px;
   text-shadow: #ffff21 1px 1px 1px;
   color: #000000;
@@ -105,7 +105,7 @@ button.edit:hover {
   box-shadow: #ffff1e 0px 0px 4px 2px;
 }
 button.edit:active {
-  background: linear-gradient(to top, #ffee58, #b3a73e);
+  background: linear-gradient(to top, #ffee58, #cf9b21);
 }
 
 button.add, button.apply {
