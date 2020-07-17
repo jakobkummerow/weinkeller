@@ -10,10 +10,10 @@ import PyQt5.QtGui as qtgui
 import PyQt5.QtWidgets as qt
 
 class SystemTrayIcon(qt.QSystemTrayIcon):
-  def __init__(self, icon, parent=None):
+  def __init__(self, icon, parent):
     qt.QSystemTrayIcon.__init__(self, icon, parent)
     self.main_win = parent
-    menu = qt.QMenu(parent)
+    menu = qt.QMenu(None)
     show_win_action = menu.addAction("Fenster anzeigen")
     show_win_action.triggered.connect(parent.show)
     exit_action = menu.addAction("Speichern und beenden")
@@ -131,11 +131,11 @@ class App(qt.QApplication):
   def __init__(self, main, argv):
     super().__init__(argv)
     self.main = main
-    win = Window(self)
+    self.win = Window(self)
     if main.confShowWindowStartup():
-      win.show()
+      self.win.show()
     else:
-      win.hide()
+      self.win.hide()
     self.aboutToQuit.connect(self.onquit)
 
   def getAddress(self):
