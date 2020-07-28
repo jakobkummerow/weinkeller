@@ -14,7 +14,11 @@ class Main():
     self.config = configparser.ConfigParser()
     self.config.read(self.config_filename)
     self._InitSettings()
-    self.ip = socket.gethostbyname(socket.gethostname())
+    try:
+      self.ip = socket.gethostbyname(socket.gethostname())
+    except socket.gaierror:
+      # This happens when there is no network connection at all.
+      self.ip = 'localhost'
     print("detected IP: %s" % self.ip)
     self.address = "http://%s:%d" % (self.ip, self.confPort())
 

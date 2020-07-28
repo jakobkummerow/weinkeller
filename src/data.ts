@@ -445,6 +445,12 @@ class Log extends DataWrapper<LogData> {
   }
 }
 
+interface UI {
+  addLog(log: Log): void;
+  addYear(year: Year): void;
+  reviveYear(year: Year): void;
+}
+
 class DataStore {
   vineyards: Vineyard[] = [];
   vineyards_by_name = new Map<string, Vineyard>();
@@ -467,7 +473,7 @@ class DataStore {
   default_reason_add: number = 0;
   default_reason_remove: number = 0;
 
-  ui: WinelistUI | null = null;
+  ui: UI | null = null;
   connection: Connection | null = null;
 
   constructor() {}
