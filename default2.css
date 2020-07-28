@@ -180,6 +180,13 @@ td.vineyard, td.wine {
 .winelist > tfoot > tr > td:first-child {
   padding-left: 6px;
 }
+.winelist .count {
+  padding-right: 10px;
+  text-align: right;
+}
+.winelist .centered {
+  text-align: center;
+}
 
 .winelist .editable {
   margin: 1px; /* instead of border */

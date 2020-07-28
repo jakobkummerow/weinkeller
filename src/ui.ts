@@ -27,9 +27,9 @@ var kLang = {
   invalid_wine: 'Wein fehlt!',
   invalid_year: 'Jahr fehlt/ungültig!',
   year_exists: 'Jahr existiert bereits für diesen Wein!',
-  rating_labels: ['Herausragend', 'Sehr gut', 'Solide', 'Mäßig', 'Schlecht'],
+  rating_labels: ['Herausragend', 'Sehr gut', 'Gut', 'OK', 'Nicht gut'],
   value_labels: ['Herausragend', 'Sehr gut', 'Solide', 'Mäßig', 'Schlecht'],
-  sweetness_labels: ['Dessertwein', 'feinherb', 'fruchtig', 'trocken', 'sauer'],
+  sweetness_labels: ['Dessertwein', 'lieblich', 'feinherb', 'trocken', 'sauer'],
   ages: [
     'unbekannt', 'zu jung', 'wird noch besser', 'genau richtig', 'muss weg',
     'zu alt'
@@ -191,13 +191,14 @@ class BaseCountTD {
       plus_callback: (event: MouseEvent) => void,
       minus_callback: (event: MouseEvent) => void) {
     AddT(this.plus_button, kLang.plus_button_text);
-    this.plus_button.className = "plus";
+    this.plus_button.className = 'plus';
     this.plus_button.onclick = plus_callback;
-    this.minus_button.className = "minus";
+    this.minus_button.className = 'minus';
     this.minus_button.onclick = minus_callback;
     AddT(this.td, "");  // To be updated.
     this.td.appendChild(this.plus_button);
     this.td.appendChild(this.minus_button);
+    this.td.className = 'count';
     return this.td;
   }
 }
@@ -1053,6 +1054,7 @@ class WinelistUI {
     if (sortMode !== null) {
       td.onclick = (event) => { this.sorter.sort(sortMode); };
     }
+    return td;
   }
 
   create() {
@@ -1064,10 +1066,11 @@ class WinelistUI {
     this.addHeaderTD(tr, kLang.vineyard, SortMode.kDefault);
     this.addHeaderTD(tr, kLang.wine, SortMode.kDefault);
     this.addHeaderTD(tr, kLang.year, SortMode.kYear);
-    this.addHeaderTD(tr, kLang.count, SortMode.kCount);
-    this.stock_header_td = AddC(tr, 'td');
-    AddT(this.stock_header_td, kLang.stock);
-    this.addHeaderTD(tr, kLang.price, SortMode.kPrice);
+    let count_td = this.addHeaderTD(tr, kLang.count, SortMode.kCount);
+    count_td.className = 'centered';
+    this.stock_header_td = this.addHeaderTD(tr, kLang.stock);
+    let price_td = this.addHeaderTD(tr, kLang.price, SortMode.kPrice);
+    price_td.className = 'centered';
     this.addHeaderTD(tr, kLang.comment);
     this.addHeaderTD(tr, "");  // Buttons.
     this.addHeaderTD(tr, kLang.rating, SortMode.kRating);
