@@ -183,7 +183,6 @@ class PopupEditor {
 class VineyardEditor extends PopupEditor {
     constructor(data) {
         super(data);
-        this.geo_cache = new GeoCache();
         this.total_count = new EditorRow(kEditLang.total_count);
         this.total_price = new EditorRow(kEditLang.total_price);
         this.name = new EditorRow(kEditLang.name);
@@ -206,14 +205,14 @@ class VineyardEditor extends PopupEditor {
         table.appendChild(this.comment.tr);
         this.country.getInput().onchange = () => {
             let c = this.country.getInput().value;
-            PopulateDataList(this.region.list, this.geo_cache.getRegions(c));
+            PopulateDataList(this.region.list, this.data.geo_cache.getRegions(c));
         };
         this.region.getInput().onchange = () => {
             let c = this.country.getInput().value;
             if (c)
                 return;
             let r = this.region.getInput().value;
-            let country_guess = this.geo_cache.getCountry(r);
+            let country_guess = this.data.geo_cache.getCountry(r);
             if (country_guess)
                 this.country.getInput().value = country_guess;
         };
@@ -248,9 +247,8 @@ class VineyardEditor extends PopupEditor {
         this.address.startEditing();
         this.comment.startEditing();
         this.editing = true;
-        this.geo_cache.initialize(this.data);
-        PopulateDataList(this.country.list, this.geo_cache.getCountries());
-        PopulateDataList(this.region.list, this.geo_cache.getAllRegions());
+        PopulateDataList(this.country.list, this.data.geo_cache.getCountries());
+        PopulateDataList(this.region.list, this.data.geo_cache.getAllRegions());
     }
     save() {
         let new_name = this.name.stopEditing();
@@ -260,13 +258,12 @@ class VineyardEditor extends PopupEditor {
         let new_address = this.address.stopEditing();
         let new_comment = this.comment.stopEditing();
         this.src.saveEdits(new_name, new_country, new_region, new_website, new_address, new_comment);
-        this.geo_cache.insertPair(new_country, new_region);
+        this.data.geo_cache.insertPair(new_country, new_region);
     }
 }
 class WineEditor extends PopupEditor {
     constructor(data) {
         super(data);
-        this.grape_cache = new GrapeCache;
         this.vineyard = new EditorRow(kEditLang.vineyard);
         this.name = new EditorRow(kEditLang.name);
         this.grape = new DataListRow(kEditLang.grape);
@@ -292,94 +289,13 @@ class WineEditor extends PopupEditor {
         this.name.startEditing();
         this.grape.startEditing();
         this.comment.startEditing();
-        this.grape_cache.initialize(this.data);
-        PopulateDataList(this.grape.list, this.grape_cache.getGrapes());
+        PopulateDataList(this.grape.list, this.data.grape_cache.getGrapes());
     }
     save() {
         let new_name = this.name.stopEditing();
         let new_grape = this.grape.stopEditing();
         let new_comment = this.comment.stopEditing();
         this.src.saveEdits(new_name, new_grape, new_comment);
-        this.grape_cache.grapes.add(new_grape);
-    }
-}
-class GeoCache {
-    constructor() {
-        this.countries = new Map();
-        this.regions = new Map();
-        this.countries = new Map();
-        this.regions = new Map();
-    }
-    initialize(data) {
-        this.countries.clear();
-        this.regions.clear();
-        data.iterateVineyards((vineyard) => {
-            this.insertPair(vineyard.data.country, vineyard.data.region);
-        });
-    }
-    insertPair(country, region) {
-        if (country) {
-            let regions = this.countries.get(country);
-            if (!regions) {
-                regions = new Set();
-                this.countries.set(country, regions);
-            }
-            if (region)
-                regions.add(region);
-        }
-        if (region) {
-            if (country) {
-                this.regions.set(region, country);
-            }
-            else if (!this.regions.has(region)) {
-                this.regions.set(region, "");
-            }
-        }
-    }
-    getCountries() {
-        let countries = [];
-        for (let c of this.countries.keys())
-            countries.push(c);
-        return countries.sort();
-    }
-    getAllRegions() {
-        let regions = [];
-        for (let r of this.regions.keys())
-            regions.push(r);
-        return regions.sort();
-    }
-    getRegions(country) {
-        let regions = [];
-        let regions_set = this.countries.get(country);
-        if (!regions_set)
-            return [];
-        for (let r of regions_set.keys())
-            regions.push(r);
-        return regions.sort();
-    }
-    getCountry(region) {
-        return this.regions.get(region);
-    }
-}
-class GrapeCache {
-    constructor() {
-        this.grapes = new Set();
-        this.grapes = new Set();
-    }
-    initialize(data) {
-        this.grapes.clear();
-        data.iterateWines((w) => {
-            let grape = w.data.grape;
-            if (!grape)
-                return;
-            this.grapes.add(grape);
-        });
-    }
-    getGrapes() {
-        let grapes = [];
-        for (let g of this.grapes.values())
-            grapes.push(g);
-        return grapes.sort();
     }
 }
 //# sourceMappingURL=vineyard-edit.js.map

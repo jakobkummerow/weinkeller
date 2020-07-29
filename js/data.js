@@ -115,7 +115,7 @@ class LogData extends DataObject {
         return this.applyUpdates(new_data, ['delta', 'reason', 'comment']);
     }
 }
-class Observable {
+class AbstractObservable {
     constructor() {
         this.observers = [];
     }
@@ -131,6 +131,8 @@ class Observable {
             this.observers[index] = this.observers.pop();
         }
     }
+}
+class Observable extends AbstractObservable {
     notifyObservers() {
         for (let observer of this.observers) {
             observer.update();
@@ -151,11 +153,23 @@ class TotalsWatchPoint extends Observable {
     priceDelta() { return this.price_delta; }
     countDelta() { return this.count_delta; }
 }
+class StringAdditionObservable extends AbstractObservable {
+    notifyObservers(new_value) {
+        for (let observer of this.observers) {
+            observer.add(new_value);
+        }
+    }
+}
 class Watchpoints {
     constructor() {
         this.deletions = new Observable();
         this.grape_names = new Observable();
+        this.vineyard_countries = new Observable();
+        this.vineyard_regions = new Observable();
         this.totals = new TotalsWatchPoint();
+        this.grapes = new StringAdditionObservable();
+        this.countries = new StringAdditionObservable();
+        this.regions = new StringAdditionObservable();
     }
 }
 var g_watchpoints = new Watchpoints();
@@ -222,16 +236,20 @@ class Vineyard extends DataWrapper {
     }
     saveEdits(new_name, new_country, new_region, new_website, new_address, new_comment) {
         let changed = false;
+        let country_changed = false;
+        let region_changed = false;
         if (this.data.name !== new_name) {
             this.data.name = new_name;
             changed = true;
         }
         if (this.data.country !== new_country) {
             this.data.country = new_country;
+            country_changed = true;
             changed = true;
         }
         if (this.data.region !== new_region) {
             this.data.region = new_region;
+            region_changed = true;
             changed = true;
         }
         if (this.data.website !== new_website) {
@@ -246,6 +264,13 @@ class Vineyard extends DataWrapper {
             this.data.comment = new_comment;
             changed = true;
         }
+        if (country_changed || region_changed) {
+            this.store.geo_cache.insertPair(new_country, new_region);
+        }
+        if (country_changed)
+            g_watchpoints.vineyard_countries.notifyObservers();
+        if (region_changed)
+            g_watchpoints.vineyard_regions.notifyObservers();
         if (changed)
             this.changed();
     }
@@ -293,6 +318,7 @@ class Wine extends DataWrapper {
         if (this.data.grape !== new_grape) {
             this.data.grape = new_grape;
             grape_changed = true;
+            this.store.grape_cache.update(new_grape);
         }
         if (this.data.comment !== new_comment) {
             this.data.comment = new_comment;
@@ -439,6 +465,83 @@ class Log extends DataWrapper {
         }
     }
 }
+class GeoCache {
+    constructor(store) {
+        this.store = store;
+        this.countries = new Map();
+        this.regions = new Map();
+        this.countries = new Map();
+        this.regions = new Map();
+    }
+    insertPair(country, region) {
+        if (country) {
+            let regions = this.countries.get(country);
+            if (!regions) {
+                regions = new Set();
+                this.countries.set(country, regions);
+                g_watchpoints.countries.notifyObservers(country);
+            }
+            if (region)
+                regions.add(region);
+        }
+        if (region) {
+            let is_new = !this.regions.has(region);
+            if (country) {
+                this.regions.set(region, country);
+            }
+            else if (!this.regions.has(region)) {
+                this.regions.set(region, "");
+            }
+            if (is_new)
+                g_watchpoints.regions.notifyObservers(region);
+        }
+    }
+    getCountries() {
+        let countries = [];
+        for (let c of this.countries.keys())
+            countries.push(c);
+        return countries.sort();
+    }
+    getAllRegions() {
+        let regions = [];
+        for (let r of this.regions.keys())
+            regions.push(r);
+        return regions.sort();
+    }
+    getRegions(country) {
+        let regions = [];
+        let regions_set = this.countries.get(country);
+        if (!regions_set)
+            return [];
+        for (let r of regions_set.keys())
+            regions.push(r);
+        return regions.sort();
+    }
+    getCountry(region) {
+        return this.regions.get(region);
+    }
+}
+class GrapeCache {
+    constructor(store) {
+        this.store = store;
+        this.grapes = new Set();
+        this.grapes = new Set();
+    }
+    update(grape) {
+        if (this.grapes.has(grape))
+            return;
+        this.grapes.add(grape);
+        g_watchpoints.grapes.notifyObservers(grape);
+    }
+    getGrapes() {
+        let grapes = [];
+        for (let g of this.grapes.values()) {
+            if (g)
+                grapes.push(g);
+        }
+        return grapes.sort();
+    }
+}
 class DataStore {
     constructor() {
         this.vineyards = [];
@@ -461,6 +564,8 @@ class DataStore {
         this.default_reason_remove = 0;
         this.ui = null;
         this.connection = null;
+        this.geo_cache = new GeoCache(this);
+        this.grape_cache = new GrapeCache(this);
     }
     dataChanged() {
         this.global_dirtybit = true;
@@ -793,6 +898,7 @@ class DataStore {
         if (data.server_id) {
             this.vineyards_by_server_id.set(data.server_id, v);
         }
+        this.geo_cache.insertPair(data.country, data.region);
         if (data.isDirty())
             this.dataChanged();
         return v;
@@ -803,6 +909,7 @@ class DataStore {
         if (data.server_id) {
             this.wines_by_server_id.set(data.server_id, w);
         }
+        this.grape_cache.update(data.grape);
         let vineyard = this.vineyards[data.vineyard_id];
         vineyard.addWine(w);
         if (data.isDirty())

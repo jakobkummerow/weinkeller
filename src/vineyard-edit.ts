@@ -197,7 +197,6 @@ abstract class PopupEditor {
 }
 
 class VineyardEditor extends PopupEditor {
-  geo_cache = new GeoCache();
   total_count = new EditorRow(kEditLang.total_count);
   total_price = new EditorRow(kEditLang.total_price);
   name = new EditorRow(kEditLang.name);
@@ -224,13 +223,13 @@ class VineyardEditor extends PopupEditor {
 
     this.country.getInput().onchange = () => {
       let c = this.country.getInput().value;
-      PopulateDataList(this.region.list, this.geo_cache.getRegions(c));
+      PopulateDataList(this.region.list, this.data.geo_cache.getRegions(c));
     };
     this.region.getInput().onchange = () => {
       let c = this.country.getInput().value;
       if (c) return;
       let r = this.region.getInput().value;
-      let country_guess = this.geo_cache.getCountry(r);
+      let country_guess = this.data.geo_cache.getCountry(r);
       if (country_guess) this.country.getInput().value = country_guess;
     }
   }
@@ -265,9 +264,8 @@ class VineyardEditor extends PopupEditor {
     this.address.startEditing();
     this.comment.startEditing();
     this.editing = true;
-    this.geo_cache.initialize(this.data);
-    PopulateDataList(this.country.list, this.geo_cache.getCountries());
-    PopulateDataList(this.region.list, this.geo_cache.getAllRegions());
+    PopulateDataList(this.country.list, this.data.geo_cache.getCountries());
+    PopulateDataList(this.region.list, this.data.geo_cache.getAllRegions());
   }
 
   save() {
@@ -280,12 +278,11 @@ class VineyardEditor extends PopupEditor {
     (this.src as Vineyard).saveEdits(
         new_name, new_country, new_region, new_website, new_address,
         new_comment);
-    this.geo_cache.insertPair(new_country, new_region);
+    this.data.geo_cache.insertPair(new_country, new_region);
   }
 }
 
 class WineEditor extends PopupEditor {
-  grape_cache = new GrapeCache;
   vineyard = new EditorRow(kEditLang.vineyard);
   name = new EditorRow(kEditLang.name);
   grape = new DataListRow(kEditLang.grape);
@@ -315,8 +312,7 @@ class WineEditor extends PopupEditor {
     this.name.startEditing();
     this.grape.startEditing();
     this.comment.startEditing();
-    this.grape_cache.initialize(this.data);
-    PopulateDataList(this.grape.list, this.grape_cache.getGrapes());
+    PopulateDataList(this.grape.list, this.data.grape_cache.getGrapes());
   }
 
   save() {
@@ -324,79 +320,5 @@ class WineEditor extends PopupEditor {
     let new_grape = this.grape.stopEditing();
     let new_comment = this.comment.stopEditing();
     (this.src as Wine).saveEdits(new_name, new_grape, new_comment);
-    this.grape_cache.grapes.add(new_grape);
-  }
-}
-
-class GeoCache {
-  countries = new Map<string, Set<string>>();
-  regions = new Map<string, string>();
-  constructor() {
-    this.countries = new Map();
-    this.regions = new Map();
-  }
-  initialize(data: DataStore) {
-    this.countries.clear();
-    this.regions.clear();
-    data.iterateVineyards((vineyard: Vineyard) => {
-      this.insertPair(vineyard.data.country, vineyard.data.region);
-    });
-  }
-  insertPair(country: string, region: string) {
-    if (country) {
-      let regions = this.countries.get(country);
-      if (!regions) {
-        regions = new Set();
-        this.countries.set(country, regions);
-      }
-      if (region) regions.add(region);
-    }
-    if (region) {
-      if (country) {
-        this.regions.set(region, country);
-      } else if (!this.regions.has(region)) {
-        this.regions.set(region, "");
-      }
-    }
-  }
-  getCountries() {
-    let countries: string[] = [];
-    for (let c of this.countries.keys()) countries.push(c);
-    return countries.sort();
-  }
-  getAllRegions() {
-    let regions: string[] = [];
-    for (let r of this.regions.keys()) regions.push(r);
-    return regions.sort();
-  }
-  getRegions(country: string) {
-    let regions: string[] = [];
-    let regions_set = this.countries.get(country);
-    if (!regions_set) return [];
-    for (let r of regions_set.keys()) regions.push(r);
-    return regions.sort();
-  }
-  getCountry(region: string) {
-    return this.regions.get(region);
-  }
-}
-
-class GrapeCache {
-  grapes = new Set<string>();
-  constructor() {
-    this.grapes = new Set();
-  }
-  initialize(data: DataStore) {
-    this.grapes.clear();
-    data.iterateWines((w: Wine) => {
-      let grape = w.data.grape;
-      if (!grape) return;
-      this.grapes.add(grape);
-    });
-  }
-  getGrapes() {
-    let grapes: string[] = [];
-    for (let g of this.grapes.values()) grapes.push(g);
-    return grapes.sort();
   }
 }

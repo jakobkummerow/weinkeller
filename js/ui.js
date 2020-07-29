@@ -764,6 +764,7 @@ class TotalsTR {
         this.tr.appendChild(this.count_td);
         this.tr.appendChild(this.stock.td);
         this.tr.appendChild(this.price_td);
+        this.price_td.className = 'price';
         this.data.iterateYears((year) => {
             let count = year.data.count;
             this.total_count += count;
@@ -808,6 +809,20 @@ class GrapeNameWatcher {
     }
     update() { this.sorter.grapeChanged(); }
 }
+class VineyardCountryWatcher {
+    constructor(sorter) {
+        this.sorter = sorter;
+        g_watchpoints.vineyard_countries.registerObserver(this);
+    }
+    update() { this.sorter.countryChanged(); }
+}
+class VineyardRegionWatcher {
+    constructor(sorter) {
+        this.sorter = sorter;
+        g_watchpoints.vineyard_regions.registerObserver(this);
+    }
+    update() { this.sorter.regionChanged(); }
+}
 class YearDeletionWatcher {
     constructor(sorter) {
         this.sorter = sorter;
@@ -822,7 +837,10 @@ class TableSorter {
         this.sort_mode = SortMode.kDefault;
         this.edit_mode = false;
         this.only_existing = true;
-        this.grape_filter = GrapeColor.kAny;
+        this.color_filter = GrapeColor.kAny;
+        this.grape_filter = kAny;
+        this.country_filter = kAny;
+        this.region_filter = kAny;
         this.getYear = (year) => year.data.year;
         this.getCount = (year) => year.data.count;
         this.getPrice = (year) => year.data.price;
@@ -853,6 +871,8 @@ class TableSorter {
         this.getter = this.getDefault;
         this.comparer = this.compareDefault;
         new GrapeNameWatcher(this);
+        new VineyardCountryWatcher(this);
+        new VineyardRegionWatcher(this);
         new YearDeletionWatcher(this);
     }
     setEditMode(editMode) {
@@ -874,14 +894,42 @@ class TableSorter {
         this.only_existing = only_existing;
         this.sortAgain();
     }
-    setGrapeFilter(grape_filter) {
-        if (grape_filter === this.grape_filter)
+    setColorFilter(color) {
+        if (color === this.color_filter)
             return;
-        this.grape_filter = grape_filter;
+        this.color_filter = color;
+        this.sortAgain();
+    }
+    setGrapeFilter(grape) {
+        if (grape === this.grape_filter)
+            return;
+        this.grape_filter = grape;
+        this.sortAgain();
+    }
+    setCountryFilter(country) {
+        if (country === this.country_filter)
+            return;
+        this.country_filter = country;
+        this.sortAgain();
+    }
+    setRegionFilter(region) {
+        if (region === this.region_filter)
+            return;
+        this.region_filter = region;
         this.sortAgain();
     }
     grapeChanged() {
-        if (this.grape_filter === GrapeColor.kAny)
+        if (this.color_filter === GrapeColor.kAny)
+            return;
+        this.sortAgain();
+    }
+    countryChanged() {
+        if (this.country_filter === kAny)
+            return;
+        this.sortAgain();
+    }
+    regionChanged() {
+        if (this.region_filter === kAny)
             return;
         this.sortAgain();
     }
@@ -890,9 +938,42 @@ class TableSorter {
             return false;
         if (year.data.count < 0)
             return false;
-        if (this.grape_filter !== GrapeColor.kAny &&
-            this.grape_filter !== ColorForGrape(year.wine.data.grape)) {
+        const grape = year.wine.data.grape;
+        if (this.color_filter !== GrapeColor.kAny &&
+            this.color_filter !== ColorForGrape(grape)) {
             return false;
+        }
+        if (this.grape_filter !== kAny) {
+            if (this.grape_filter === kUnknown) {
+                if (grape)
+                    return false;
+            }
+            else {
+                if (grape !== this.grape_filter)
+                    return false;
+            }
+        }
+        if (this.country_filter !== kAny) {
+            const country = year.wine.vineyard.data.country;
+            if (this.country_filter === kUnknown) {
+                if (country)
+                    return false;
+            }
+            else {
+                if (country !== this.country_filter)
+                    return false;
+            }
+        }
+        if (this.region_filter !== kAny) {
+            const region = year.wine.vineyard.data.region;
+            if (this.region_filter === kUnknown) {
+                if (region)
+                    return false;
+            }
+            else {
+                if (region !== this.region_filter)
+                    return false;
+            }
         }
         return true;
     }
@@ -1189,8 +1270,17 @@ class WinelistUI {
     setOnlyExisting(only_existing) {
         this.sorter.setOnlyExisting(only_existing);
     }
-    setGrapeFilter(grape_filter) {
-        this.sorter.setGrapeFilter(grape_filter);
+    setColorFilter(color) {
+        this.sorter.setColorFilter(color);
+    }
+    setGrapeFilter(grape) {
+        this.sorter.setGrapeFilter(grape);
+    }
+    setCountryFilter(country) {
+        this.sorter.setCountryFilter(country);
+    }
+    setRegionFilter(region) {
+        this.sorter.setRegionFilter(region);
     }
     updateDisplayedTotals(total_count, total_price) {
         this.totals.updateDisplayedTotals(total_count, total_price);

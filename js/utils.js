@@ -6,6 +6,8 @@ var GrapeColor;
     GrapeColor["kUnknown"] = "unknown";
     GrapeColor["kAny"] = "any";
 })(GrapeColor || (GrapeColor = {}));
+const kAny = '__any__';
+const kUnknown = '__unknown__';
 const kKnownGrapes = {
     "Auxerrois": GrapeColor.kWhite,
     "Bacchus": GrapeColor.kWhite,

@@ -7,6 +7,9 @@ enum GrapeColor {
   kAny = "any",  // For convenience.
 }
 
+const kAny = '__any__';
+const kUnknown = '__unknown__';
+
 const kKnownGrapes: any = {
   "Auxerrois": GrapeColor.kWhite,
   "Bacchus": GrapeColor.kWhite,
