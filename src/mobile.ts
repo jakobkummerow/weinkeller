@@ -21,7 +21,7 @@ class VineyardDiv {
     this.update();
   }
   addAll() {
-    this.vineyard.iterateWines((wine) => { 
+    this.vineyard.iterateWines((wine) => {
       let wine_span = this.addWine(wine);
       wine_span.addAllYears();
     });
@@ -34,7 +34,7 @@ class VineyardDiv {
   addWine(wine: Wine) {
     let index = 0;
     while (index < this.wines.length &&
-        this.wines[index].getName() < wine.data.name) {
+           this.wines[index].getName().localeCompare(wine.data.name) < 0) {
       index++;
     }
     if (index < this.wines.length &&
@@ -212,14 +212,15 @@ class WinelistMobileUI {
 
   addYear(year: Year) {
     let vineyard = year.wine.vineyard;
+    let name = vineyard.data.name;
     let index = 0;
     while (index < this.vineyards.length &&
-        this.vineyards[index].getName() < vineyard.data.name) {
+           this.vineyards[index].getName().localeCompare(name) < 0) {
       index++;
     }
     let vineyard_div: VineyardDiv;
     if (index < this.vineyards.length &&
-        this.vineyards[index].getName() === vineyard.data.name) {
+        this.vineyards[index].getName() === name) {
       vineyard_div = this.vineyards[index];
     } else {
       vineyard_div = new VineyardDiv(vineyard);
