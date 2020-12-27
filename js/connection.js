@@ -13,6 +13,10 @@ var RequestType;
     RequestType[RequestType["kPushAll"] = 4] = "kPushAll";
 })(RequestType || (RequestType = {}));
 ;
+const kConnLang = {
+    server_change_reset_data: "Anderer Server gefunden. OK um alle Daten neu zu laden,\n\
+    Abbrechen um auf manuelle Synchronisation umzustellen",
+};
 const kSeconds = 1000; // Milliseconds.
 const kMinutes = 60 * kSeconds;
 const kHours = 60 * kMinutes;
@@ -49,6 +53,10 @@ class Connection {
             if (this.next_tick === 0) {
                 // There's currently a request in flight.
                 this.delay = 0;
+            }
+            else if (this.next_tick === -1) {
+                // Auto-sync disabled.
+                this.entryPoint();
             }
             else {
                 // We're currently waiting for the next scheduled activity.
@@ -98,6 +106,10 @@ class Connection {
         let delay = this.queued_requests !== RequestType.kNone ? 0 : this.delay;
         this.next_tick = window.setTimeout(this.callback, delay);
     }
+    disable_loop() {
+        this.next_ping = -1;
+        this.next_tick = -1;
+    }
     entryPoint() {
         this.next_tick = 0;
         if (this.queued_requests & RequestType.kFetchAll) {
@@ -120,6 +132,8 @@ class Connection {
         this.sendGet('api/get', { last_commit: this.last_commit });
     }
     processResponse(response) {
+        if (this.processUuid(response))
+            return this.disable_loop();
         let had_receipts = this.processReceipts(response.receipts);
         let had_data = this.processData(response);
         if (had_receipts) {
@@ -374,6 +388,27 @@ class Connection {
         if (commit !== this.last_commit) {
             this.last_commit = commit;
             this.data.setLastServerCommit(commit);
+            return true;
+        }
+        return false;
+    }
+    // Returns {true} on UUID mismatch.
+    processUuid(response) {
+        if (!response.uuid) {
+            console.log("no response uuid");
+            return false;
+        }
+        let current_uuid = this.data.serverUuid();
+        if (!current_uuid) {
+            this.data.setServerUuid(response.uuid);
+            console.log("no current uuid, accepting new");
+            return false;
+        }
+        if (current_uuid !== response.uuid) {
+            console.log("SERVER UUID MISMATCH!");
+            if (window.confirm(kConnLang.server_change_reset_data)) {
+                this.data.clearAll();
+            }
             return true;
         }
         return false;

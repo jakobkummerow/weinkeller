@@ -568,6 +568,7 @@ class DataStore {
   next_log_id: number = 0;
   last_server_commit: number = 0;
   last_server_contact: number = 0;
+  server_uuid: string = "";
   default_reason_add: number = 0;
   default_reason_remove: number = 0;
 
@@ -595,6 +596,12 @@ class DataStore {
   setLastServerContact(contact: number) {
     this.last_server_contact = contact;
     this.persistLastServerContact();
+  }
+
+  public serverUuid() { return this.server_uuid; }
+  public setServerUuid(uuid: string) {
+    this.server_uuid = uuid;
+    this.persistServerUuid();
   }
 
   public getOrCreateVineyard(name: string) {
@@ -765,7 +772,7 @@ class DataStore {
               };
               tx_log.oncomplete = (event) => {
                 console.log('Reading log from DB: done');
-                resolve();
+                resolve(event);
               };
               this.readLogFromDB(tx_log);
             };
@@ -800,31 +807,38 @@ class DataStore {
     this.getWriteStore('data').put(
         this.last_server_contact, 'last_server_contact');
   }
+  private persistServerUuid() {
+    this.getWriteStore('data').put(this.server_uuid, 'server_uuid');
+  }
   private readDataFromDB(data_store: IDBObjectStore) {
     data_store.get('next_vineyard_id').onsuccess = (event) => {
       let next = (event.target as IDBRequest<number>).result;
       if (next) this.next_vineyard_id = next;
-    }
+    };
     data_store.get('next_wine_id').onsuccess = (event) => {
       let next = (event.target as IDBRequest<number>).result;
       if (next) this.next_wine_id = next;
-    }
+    };
     data_store.get('next_year_id').onsuccess = (event) => {
       let next = (event.target as IDBRequest<number>).result;
       if (next) this.next_year_id = next;
-    }
+    };
     data_store.get('next_log_id').onsuccess = (event) => {
       let next = (event.target as IDBRequest<number>).result;
       if (next) this.next_log_id = next;
-    }
+    };
     data_store.get('last_server_commit').onsuccess = (event) => {
       let commit = (event.target as IDBRequest<number>).result;
       if (commit) this.last_server_commit = commit;
-    }
+    };
     data_store.get('last_server_contact').onsuccess = (event) => {
       let contact = (event.target as IDBRequest<number>).result;
       if (contact) this.last_server_contact = contact;
-    }
+    };
+    data_store.get('server_uuid').onsuccess = (event) => {
+      let uuid = (event.target as IDBRequest<string>).result;
+      if (uuid) this.server_uuid = uuid;
+    };
   }
   private readVineyardsFromDB(tx: IDBTransaction) {
     tx.objectStore("vineyards").openCursor().onsuccess = (event) => {

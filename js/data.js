@@ -560,6 +560,7 @@ class DataStore {
         this.next_log_id = 0;
         this.last_server_commit = 0;
         this.last_server_contact = 0;
+        this.server_uuid = "";
         this.default_reason_add = 0;
         this.default_reason_remove = 0;
         this.ui = null;
@@ -581,6 +582,11 @@ class DataStore {
     setLastServerContact(contact) {
         this.last_server_contact = contact;
         this.persistLastServerContact();
+    }
+    serverUuid() { return this.server_uuid; }
+    setServerUuid(uuid) {
+        this.server_uuid = uuid;
+        this.persistServerUuid();
     }
     getOrCreateVineyard(name) {
         let vineyard = this.vineyards_by_name.get(name);
@@ -751,7 +757,7 @@ class DataStore {
                             };
                             tx_log.oncomplete = (event) => {
                                 console.log('Reading log from DB: done');
-                                resolve();
+                                resolve(event);
                             };
                             this.readLogFromDB(tx_log);
                         };
@@ -783,6 +789,9 @@ class DataStore {
     persistLastServerContact() {
         this.getWriteStore('data').put(this.last_server_contact, 'last_server_contact');
     }
+    persistServerUuid() {
+        this.getWriteStore('data').put(this.server_uuid, 'server_uuid');
+    }
     readDataFromDB(data_store) {
         data_store.get('next_vineyard_id').onsuccess = (event) => {
             let next = event.target.result;
@@ -813,6 +822,11 @@ class DataStore {
             let contact = event.target.result;
             if (contact)
                 this.last_server_contact = contact;
+        };
+        data_store.get('server_uuid').onsuccess = (event) => {
+            let uuid = event.target.result;
+            if (uuid)
+                this.server_uuid = uuid;
         };
     }
     readVineyardsFromDB(tx) {

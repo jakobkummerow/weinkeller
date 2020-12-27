@@ -3,6 +3,7 @@ import datetime
 import io
 import shutil
 import sqlite3
+import uuid
 
 CREATE_VINEYARDS = """
 CREATE TABLE IF NOT EXISTS vineyards (
@@ -52,6 +53,12 @@ CREATE TABLE IF NOT EXISTS log (
   reason INTEGER,
   comment TEXT,
   lastchange INTEGER
+)"""
+
+CREATE_DATA = """
+CREATE TABLE IF NOT EXISTS data (
+  key TEXT PRIMARY KEY,
+  value TEXT
 )"""
 
 KNOWN_GRAPES = [
@@ -105,6 +112,7 @@ class Manager:
     self._conn = conn
     conn.row_factory = sqlite3.Row
     self.ApplyDatabaseUpdates(filename)
+    self.SetUUID()
     self._lastchange = self.GetLastChange()
     self._has_update_scope = False
     # TODO: create index?
@@ -144,8 +152,8 @@ class Manager:
       existing = c.execute("""
           SELECT count(*) FROM sqlite_master WHERE type='table'
           AND name='years' OR name='vineyards' OR name='wines' OR name='log'
-          """).fetchone()[0]
-      if existing != 4:
+          OR name='data'""").fetchone()[0]
+      if existing != 5:
         print("Creating database tables...")
         # Creating tables at the latest version.
         c.execute("PRAGMA user_version = 3")
@@ -153,8 +161,9 @@ class Manager:
         c.execute(CREATE_WINES)
         c.execute(CREATE_YEARS)
         c.execute(CREATE_LOG)
+        c.execute(CREATE_DATA)
         self._conn.commit()
-        version = 3
+        version = 4
       else:
         print("Updating database version 0->1...")
         self._BackupDatabase(filename, version)
@@ -180,6 +189,13 @@ class Manager:
       self._conn.execute("PRAGMA user_version = 3")
       self._conn.commit()
       version = 3
+    if version < 4:
+      print("Updating database version 3->4...")
+      self._BackupDatabase(filename, version)
+      self._conn.execute(CREATE_DATA)
+      self._conn.execute("PRAGMA user_version = 4")
+      self._conn.commit()
+      version = 4
 
   def _GetLastChange(self, table):
     c = self._conn.execute("SELECT MAX(lastchange) FROM %s" % table)
@@ -192,6 +208,19 @@ class Manager:
     y = self._GetLastChange("years")
     l = self._GetLastChange("log")
     return max(v, w, y, l)
+
+  def SetUUID(self):
+    query = "SELECT value FROM data WHERE key='uuid'"
+    maybe = self._conn.execute(query).fetchone()
+    if maybe is None:
+      print("Generating new UUID...")
+      self.uuid = str(uuid.uuid4())
+      self._conn.execute("INSERT INTO data(key, value) VALUES (?, ?)",
+                         ("uuid", self.uuid))
+      self._conn.commit()
+    else:
+      self.uuid = maybe[0]
+    print("Server UUID: %s" % self.uuid)
 
   def Execute(self, stmt, args=None):
     if (stmt.startswith("UPDATE") or stmt.startswith('INSERT')):
@@ -263,6 +292,7 @@ class Manager:
         "years": years,
         "log": log,
         "commit": self._lastchange,
+        "uuid": self.uuid,
     }
 
   def Set(self, postdata):

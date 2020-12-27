@@ -511,7 +511,13 @@ class ConnectionUI {
         }
         SetText(this.last_result, status);
         SetText(this.last_success, formatPast(now - this.connection.last_success));
-        SetText(this.next_attempt, formatFuture(this.connection.next_ping - now));
+        let next_ping = this.connection.next_ping;
+        if (next_ping === -1) {
+            SetText(this.next_attempt, kCLang.never);
+        }
+        else {
+            SetText(this.next_attempt, formatFuture(next_ping - now));
+        }
     }
 }
 //# sourceMappingURL=sidebar.js.map
