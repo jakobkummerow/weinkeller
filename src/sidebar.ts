@@ -515,6 +515,12 @@ class ConnectionUI {
     let header = AddC(this.box, 'div');
     AddT(header, kCLang.connection_status);
 
+    let prefix = this.connection.getPrefix();
+    if (prefix !== '') {
+      let div = AddC(this.box, 'div');
+      AddT(div, prefix);
+    }
+
     let table = AddC(this.box, 'div');
     table.className = 'table'
     this.makeRow(table, kCLang.last_result, this.last_result);

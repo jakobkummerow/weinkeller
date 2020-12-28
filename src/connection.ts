@@ -12,6 +12,7 @@ const kConnLang = {
   server_change_reset_data:
     "Anderer Server gefunden. OK um alle Daten neu zu laden,\n\
     Abbrechen um auf manuelle Synchronisation umzustellen",
+  specify_server: "Offline-Modus, bitte Server angeben:",
 };
 
 const kSeconds = 1000;  // Milliseconds.
@@ -35,6 +36,19 @@ class Connection {
 
   constructor(private data: DataStore) {
     data.connection = this;
+  }
+
+  public checkPrefix() {
+    if (!window.location.href.startsWith('file:///')) return;
+    let prefix = window.prompt(kConnLang.specify_server);
+    if (typeof prefix !== 'string') return;
+    if (!prefix.endsWith('/')) prefix += '/';
+    if (!prefix.startsWith('http')) prefix = 'http://' + prefix;
+    this.setPrefix(prefix);
+  }
+
+  public getPrefix() {
+    return this.prefix;
   }
 
   public start() {

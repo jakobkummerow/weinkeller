@@ -16,6 +16,7 @@ var RequestType;
 const kConnLang = {
     server_change_reset_data: "Anderer Server gefunden. OK um alle Daten neu zu laden,\n\
     Abbrechen um auf manuelle Synchronisation umzustellen",
+    specify_server: "Offline-Modus, bitte Server angeben:",
 };
 const kSeconds = 1000; // Milliseconds.
 const kMinutes = 60 * kSeconds;
@@ -37,6 +38,21 @@ class Connection {
         this.prefix = "";
         this.queued_requests = 0;
         data.connection = this;
+    }
+    checkPrefix() {
+        if (!window.location.href.startsWith('file:///'))
+            return;
+        let prefix = window.prompt(kConnLang.specify_server);
+        if (typeof prefix !== 'string')
+            return;
+        if (!prefix.endsWith('/'))
+            prefix += '/';
+        if (!prefix.startsWith('http'))
+            prefix = 'http://' + prefix;
+        this.setPrefix(prefix);
+    }
+    getPrefix() {
+        return this.prefix;
     }
     start() {
         this.last_commit = this.data.getLastServerCommit();

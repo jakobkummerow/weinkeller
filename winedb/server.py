@@ -289,6 +289,14 @@ class WineHandler(BaseHTTPRequestHandler):
       response = self._server.manager.UpdateWine(wine_id, name, grape, comment)
       self._send_json(response)
 
+  def do_OPTIONS(self):
+    # POST requests in offline mode require this for "pre-flighting" requests.
+    self.send_response(204)
+    self.send_header('Access-Control-Allow-Origin', self.headers['Origin'])
+    self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    self.send_header('Access-Control-Allow-Headers', 'Content-type')
+    self.end_headers()
+
 class WineServer(HTTPServer):
   def __init__(self, port, db_file, basedir):
     super().__init__(('', port), WineHandler)

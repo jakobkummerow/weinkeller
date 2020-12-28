@@ -11,14 +11,8 @@ function winelist_main() {
     g_wine_editor = new WineEditor(g_data);
     g_data.initializeFromDatabase()
         .then(() => {
+        g_connection.checkPrefix();
         ui.create();
-        // TODO: support offline mode. Prototype:
-        /*
-        if (window.location.href.startsWith('file:///')) {
-          let prefix = window.prompt('offline mode, please enter server ip:');
-          g_connection.setPrefix(prefix as string);
-        }
-        */
         g_connection.start();
     })
         .then(() => {
