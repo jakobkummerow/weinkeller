@@ -161,7 +161,7 @@ button.generic:active {
   border-bottom: 1px solid #e0e0e0;
   border-top: 1px solid #e0e0e0;
 }
-td.vineyard, td.wine {
+.handcursor {
   cursor: hand;
 }
 .winelist > thead > tr > td {
@@ -300,34 +300,31 @@ td.label {
 }
 
 /* Five-star ratings */
-.rating {
+fieldset.rating {
   border: none;
-  float: left;
+  display: inline-block;
   margin: 0;
   padding: 0;
 }
-.rating > input {
+fieldset.rating > input {
   display: none;
 }
-.rating > label:before {
-  content: "★";
-  display: inline-block;
+fieldset.rating > span {
+  color: #f0f0f0;
+  cursor: default;
+  float: right;
   font-size: 18pt;
   margin: -2px;
 }
-.rating > label {
-  color: #f0f0f0;
-  float: right;
-}
 
-.rating:not(:hover) > input:checked ~ label {
+fieldset.rating:not(:hover) > input:checked ~ span {
   color: #FFD700;
 }
-.rating:not(:hover) > input.fivestar:checked ~ label {
+fieldset.rating:not(:hover) > input.fivestar:checked ~ span {
   text-shadow: 0px 0px 3px #FFED85;
 }
-.rating:not(:checked) > label:hover,
-.rating:not(:checked) > label:hover ~ label {
+fieldset.rating:not(:checked) > span:hover,
+fieldset.rating:not(:checked) > span:hover ~ span {
   color: #FFED85;
 }
 

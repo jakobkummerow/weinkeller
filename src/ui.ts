@@ -39,6 +39,12 @@ var kLang = {
 
 var kPricePattern = "[0-9]{1,3}([\.|,][0-9]{1,2})?";
 
+const kRow = 'tr';
+const kCell = 'td';
+function createCell() {
+  return document.createElement(kCell);
+}
+
 function FormatAge(int: number): string {
   return kLang.ages[int];
 }
@@ -52,8 +58,7 @@ function MakeStockApplyButton(callback: (event: MouseEvent) => void) {
 }
 
 abstract class HideableNameTD {
-  // TODO: make protected again
-  public td = document.createElement('td');
+  protected td = createCell();
   private span = document.createElement('span');
   private stock_mode = false;
   private stock_apply_button: HTMLButtonElement | null = null;
@@ -61,6 +66,7 @@ abstract class HideableNameTD {
   constructor(
       protected src: Vineyard|Wine, private className: string,
       private hidden: boolean, private onclick: (event: Event) => void) {
+    this.td.className = this.className;
     src.registerObserver(this);
   }
   protected abstract createTitle(): void;
@@ -92,11 +98,12 @@ abstract class HideableNameTD {
     if (this.hidden) {
       this.span.style.display = 'none';
       this.td.title = '';
-      this.td.className = '';  // Clears all.
+      this.td.classList.remove('handcursor');
+      this.td.classList.remove('dirty');
       this.td.onclick = null;
     } else {
       this.span.style.display = '';
-      this.td.classList.add(this.className);
+      this.td.classList.add('handcursor');
       this.td.onclick = this.onclick;
       if (this.stock_mode) this.getStockApplyButton();
       this.update();
@@ -150,7 +157,7 @@ class WineTD extends HideableNameTD {
 }
 
 class YearTD {
-  private td = document.createElement('td');
+  private td = createCell();
   private stock_apply_button: HTMLButtonElement | null = null;
 
   constructor(private year: Year) {
@@ -181,7 +188,7 @@ class YearTD {
 }
 
 class BaseCountTD {
-  protected td = document.createElement('td');
+  protected td = createCell();
   protected plus_button = document.createElement('button');
   protected minus_button = document.createElement('button');
 
@@ -257,7 +264,7 @@ class StockTD extends BaseCountTD {
 }
 
 abstract class EditableTD {
-  protected td = document.createElement('td');
+  protected td = createCell();
   protected div = document.createElement('div');
   protected input: HTMLInputElement | null = null;
 
@@ -309,7 +316,9 @@ class PriceTD extends EditableTD {
 }
 
 class CommentTD extends EditableTD {
-  constructor(year: Year) { super(year); }
+  constructor(year: Year) {
+    super(year);
+  }
   value() {
     if (!this.input) throw "must startEditing() before calling value()";
     return this.input.value.trim();
@@ -318,7 +327,7 @@ class CommentTD extends EditableTD {
 }
 
 class ButtonTD {
-  private td = document.createElement('td');
+  private td = createCell();
   private button = document.createElement('button');
 
   constructor(public year_tr: YearTR) {}
@@ -348,28 +357,26 @@ abstract class BaseRatingTD {
   abstract clicked(value: number): void;
 
   protected createInternal(labels: string[], radio_basename: string) {
-    let td = document.createElement('td');
+    let td = createCell();
     let fieldset = AddC(td, 'fieldset');
     fieldset.className = 'rating';
     this.count = labels.length;
     let name = radio_basename + this.year.local_id;
     for (let i = 0; i < this.count; i++) {
-      let id = name + '_' + i;
+      let value = this.count - i;
       let input = AddC(fieldset, 'input');
       input.type = 'radio';
       input.name = name;
-      input.id = id;
-      input.value = (this.count - i).toString();
+      input.value = value.toString();
       if (i === 0) input.className = 'fivestar';
       this.inputs.push(input);
-      let label = AddC(fieldset, 'label');
-      label.htmlFor = id;
-      label.title = labels[i];
-      let value = this.count - i;
-      label.onclick = (event) => {
+      let star = AddC(fieldset, 'span');
+      star.title = labels[i];
+      star.onclick = (event) => {
         event.preventDefault();
         this.clicked(value);
       };
+      AddT(star, '★');
     }
     return td;
   }
@@ -410,7 +417,7 @@ class SweetnessTD extends BaseRatingTD {
 }
 
 class AgeTD {
-  private td = document.createElement('td');
+  private td = createCell();
   private select = document.createElement('select');
   constructor(private year: Year) {}
   create() {
@@ -436,19 +443,10 @@ class AgeTD {
 }
 
 class HideableTR {
-  tr: HTMLTableRowElement = document.createElement('tr');
-  constructor(private hidden: boolean) {
-    this.tr.style.display = hidden ? 'none' : 'table-row';
-  }
-  show() {
-    if (!this.hidden) return;
-    this.hidden = false;
-    this.tr.style.display = 'table-row';
-  }
+  public tr = document.createElement(kRow);
+  constructor() {}
   hide() {
-    if (this.hidden) return;
-    this.hidden = true;
-    this.tr.style.display = 'none';
+    this.tr.parentElement?.removeChild(this.tr);
   }
 }
 
@@ -471,7 +469,7 @@ class YearTR extends HideableTR {
   constructor(
       public year: Year, public showVineyard: boolean,
       public showWine: boolean) {
-    super(false);  // Shown by default.
+    super();
     year.registerObserver(this);
     this.vineyard = new VineyardTD(year.wine.vineyard, !showVineyard);
     this.wine = new WineTD(year.wine, !showWine);
@@ -573,7 +571,7 @@ class YearTR extends HideableTR {
 }
 
 class InputTD {
-  td = document.createElement('td');
+  td = createCell();
   input = document.createElement('input');
 
   constructor(placeholder: string) {
@@ -662,7 +660,7 @@ class PriceInputTD extends InputTD {
 }
 
 class EmptyTD {
-  td = document.createElement('td');
+  td = createCell();
   private hidden = false;
   constructor() {}
   public hide() {
@@ -690,15 +688,15 @@ class EditTR extends HideableTR {
   constructor(
       public data: DataStore, public vineyard: Vineyard|null = null,
       public wine: Wine|null = null) {
-    super(true);  // Hidden by default.
+    super();
     if (this.vineyard) {
-      AddC(this.tr, 'td');
+      AddC(this.tr, kCell);
     } else {
       this.vineyard_td = new VineyardInputTD(data);
       this.tr.appendChild(this.vineyard_td.td);
     }
     if (this.wine) {
-      AddC(this.tr, 'td');
+      AddC(this.tr, kCell);
     } else {
       this.wine_td = new WineInputTD(this);
       this.tr.appendChild(this.wine_td.td);
@@ -709,7 +707,7 @@ class EditTR extends HideableTR {
     this.tr.appendChild(this.price.td);
     this.tr.appendChild(this.comment.td);
 
-    let button_td = AddC(this.tr, 'td');
+    let button_td = AddC(this.tr, kCell);
     let button = AddC(button_td, 'button');
     AddT(button, kLang.checkmark);
     button.className = "add";
@@ -774,19 +772,19 @@ class EditTR extends HideableTR {
 }
 
 class TotalsTR {
-  tr = document.createElement('tr');
-  price_td = document.createElement('td');
+  tr = document.createElement(kRow);
+  price_td = createCell();
   stock = new EmptyTD();
-  count_td = document.createElement('td');
+  count_td = createCell();
   total_price = 0;
   total_count = 0;
 
   constructor(private data: DataStore) {
     g_watchpoints.totals.registerObserver(this);
-    let label = AddC(this.tr, 'td');
+    let label = AddC(this.tr, kCell);
     AddT(label, kLang.total);
-    AddC(this.tr, 'td');  // Wine.
-    AddC(this.tr, 'td');  // Year.
+    AddC(this.tr, kCell);  // Wine.
+    AddC(this.tr, kCell);  // Year.
     this.tr.appendChild(this.count_td);
     this.tr.appendChild(this.stock.td);
     this.tr.appendChild(this.price_td);
@@ -1031,7 +1029,6 @@ class TableSorter {
     for (let row of this.winelist.year_rows) {
       let year = row.year;
       if (this.isShown(year)) {
-        row.show();
         list.push({row: row, value: this.getter(year)});
         total_count += year.data.count;
         total_price += year.data.count * year.data.price;
@@ -1069,14 +1066,12 @@ class TableSorter {
           let wine = row.year.wine;
           let edit_row = this.winelist.wine_edit_rows.get(wine);
           if (!edit_row) throw "bug: edit_row must exist for wine";
-          edit_row.show();
           this.tbody.appendChild(edit_row.tr);
         }
         if (show_new_wine) {
           let vineyard = row.year.wine.vineyard;
           let edit_row = this.winelist.vineyard_edit_rows.get(vineyard);
           if (!edit_row) throw "bug: edit_row must exist for vineyard!";
-          edit_row.show();
           this.tbody.appendChild(edit_row.tr);
         }
       } else {
@@ -1114,7 +1109,7 @@ class WinelistUI {
 
   private addHeaderTD(
       tr: HTMLTableRowElement, label: string, sortMode: SortMode|null = null) {
-    let td = AddC(tr, 'td');
+    let td = AddC(tr, kCell);
     AddT(td, label);
     if (sortMode !== null) {
       td.onclick = (event) => { this.sorter.sort(sortMode); };
@@ -1127,15 +1122,15 @@ class WinelistUI {
 
     // Create header row.
     let thead = AddC(this.table, 'thead');
-    let tr = AddC(thead, 'tr');
+    let tr = AddC(thead, kRow);
     this.addHeaderTD(tr, kLang.vineyard, SortMode.kDefault);
     this.addHeaderTD(tr, kLang.wine, SortMode.kDefault);
     this.addHeaderTD(tr, kLang.year, SortMode.kYear);
     let count_td = this.addHeaderTD(tr, kLang.count, SortMode.kCount);
-    count_td.className = 'centered';
+    count_td.classList.add('centered');
     this.stock_header_td = this.addHeaderTD(tr, kLang.stock);
     let price_td = this.addHeaderTD(tr, kLang.price, SortMode.kPrice);
-    price_td.className = 'centered';
+    price_td.classList.add('centered');
     this.addHeaderTD(tr, kLang.comment);
     this.addHeaderTD(tr, "");  // Buttons.
     this.addHeaderTD(tr, kLang.rating, SortMode.kRating);
@@ -1155,20 +1150,15 @@ class WinelistUI {
           vineyard_first = false;
         });
         // "New year" edit row.
-        let wine_edit = this.addWineEditRow(vineyard, wine);
-        this.tbody.appendChild(wine_edit.tr);
-        if (wine_first) wine_edit.hide();
+        this.addWineEditRow(vineyard, wine);
       });
       // "New wine" edit row.
-      let vineyard_edit = this.addVineyardEditRow(vineyard);
-      this.tbody.appendChild(vineyard_edit.tr);
-      if (vineyard_first) vineyard_edit.hide();
+      this.addVineyardEditRow(vineyard);
     });
 
     // Footer.
     let tfoot = AddC(this.table, 'tfoot');
     let add_row = new EditTR(this.data, null, null);
-    add_row.show();
     add_row.stock.hide();
     this.edit_stock_tds.push(add_row.stock);
     tfoot.appendChild(add_row.tr);
