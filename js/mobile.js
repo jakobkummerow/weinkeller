@@ -227,6 +227,18 @@ class WinelistMobileUI {
         }
         else {
             vineyard_div = new VineyardDiv(vineyard);
+            if (index >= this.vineyards.length) {
+                this.container.appendChild(vineyard_div.create());
+                this.vineyards.push(vineyard_div);
+            }
+            else {
+                let next_child = this.container.firstChild;
+                for (let i = 0; i < index; i++) {
+                    next_child = next_child.nextSibling;
+                }
+                this.container.insertBefore(vineyard_div.create(), next_child);
+                this.vineyards.splice(index, 0, vineyard_div);
+            }
         }
         vineyard_div.addYear(year);
         vineyard_div.maybeHide();

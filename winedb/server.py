@@ -42,13 +42,15 @@ class WineHandler(BaseHTTPRequestHandler):
     if path == "/":
       user_agent = self.headers['user-agent'].lower()
       if "android" in user_agent or "mobile" in user_agent:
-        path = "/mobile.html"
+        path = "/mobile2.html"
       else:
-        path = "/index.html"
+        path = "/index2.html"
     elif path == "/m":
+      path = "/mobile2.html"
+    elif path == "/v1":
+      path = "/index.html"
+    elif path == "/m1":
       path = "/mobile.html"
-    elif path == "/v2":
-      path = "/index2.html"
 
     try:
       mimetype = None
