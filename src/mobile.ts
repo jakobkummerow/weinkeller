@@ -240,8 +240,11 @@ class WinelistMobileUI {
     vineyard_div.maybeHide();
   }
 
+  isStockMode() {
+    return false;
+  }
   reviveYear(year: Year) {
-    // TODO: can this happen on mobile?
+    // Currently can't happen on mobile (only if adding wines was possible).
   }
   addLog(log: Log) {
     // Log is not shown on mobile.

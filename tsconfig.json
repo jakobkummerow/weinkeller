@@ -3,6 +3,7 @@
       "outDir": "./js",
       "alwaysStrict": true,
       "module": "None",
+      "moduleResolution": "Node",
       "noImplicitAny": true,
       "noImplicitThis": true,
       "sourceMap": true,

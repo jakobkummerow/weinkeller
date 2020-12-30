@@ -337,7 +337,7 @@ class Wine extends DataWrapper<WineData> {
     if (grape_changed) g_watchpoints.grape_names.notifyObservers();
   }
 
-  private stock_applier = (y: Year) => y.applyStock;
+  private stock_applier = (y: Year) => y.applyStock();
   applyStock() { this.iterateYears(this.stock_applier); }
 }
 
@@ -396,6 +396,7 @@ class Year extends DataWrapper<YearData> {
       this.data.count = this.data.stock;
       this.changed();
       g_watchpoints.totals.notifyDelta(price_delta, count_delta);
+      this.store.recordLogApplyStock(this, count_delta);
     }
   }
   resetStock() {
@@ -441,8 +442,11 @@ class Year extends DataWrapper<YearData> {
     this.data.age = new_age;
     this.changed();
   }
-  reviveDeleted(new_count: number, new_price: number, new_comment: string) {
+  reviveDeleted(
+      new_count: number, new_stock: number, new_price: number,
+      new_comment: string) {
     this.data.count = new_count;
+    this.data.stock = new_stock;
     if (new_price) this.data.price = new_price;
     if (new_comment) this.data.comment = new_comment;
     // Let's keep other old data, maybe it's useful.
@@ -547,6 +551,7 @@ interface UI {
   addLog(log: Log): void;
   addYear(year: Year): void;
   reviveYear(year: Year): void;
+  isStockMode(): boolean;
 }
 
 class DataStore {
@@ -620,17 +625,23 @@ class DataStore {
 
   public getOrCreateYear(
       wine: Wine, year: number, count: number, price: number, comment: string) {
+    let stock_mode = (this.ui && this.ui.isStockMode());
+    let stock = 0;
+    if (stock_mode) {
+      stock = count;
+      count = 0;
+    }
     let maybe_deleted = wine.getDeletedYear(year);
     if (maybe_deleted) {
-      maybe_deleted.reviveDeleted(count, price, comment);
-      this.recordLog(maybe_deleted, count);
+      maybe_deleted.reviveDeleted(count, stock, price, comment);
+      if (!stock_mode) this.recordLog(maybe_deleted, count);
       if (this.ui) this.ui.reviveYear(maybe_deleted);
       return;
     }
     let data = new YearData(
-        0, 1, wine.local_id, year, count, 0, price, 0, 0, 0, 0, comment);
+        0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, comment);
     let y = this.createYear(data);
-    this.recordLog(y, count);
+    if (!stock_mode) this.recordLog(y, count);
   }
 
   recordLog(y: Year, delta: number) {
@@ -642,6 +653,17 @@ class DataStore {
       let reason =
           delta > 0 ? this.default_reason_add : this.default_reason_remove;
       let data = new LogData(0, 1, date, y.local_id, delta, reason, "");
+      this.createLog(data);
+    }
+  }
+  recordLogApplyStock(y: Year, delta: number) {
+    let date = getDateString();
+    let log = y.log_by_date.get(date);
+    let kReasonStock = 20;
+    if (log && log.data.reason === kReasonStock) {
+      log.updateDelta(delta);
+    } else {
+      let data = new LogData(0, 1, date, y.local_id, delta, kReasonStock, '');
       this.createLog(data);
     }
   }

@@ -930,8 +930,11 @@ class TableSorter {
         this.sortAgain();
     }
     isShown(year) {
-        if (this.only_existing && year.data.count === 0)
-            return false;
+        if (this.only_existing && year.data.count === 0) {
+            if (!this.winelist.isStockMode() || year.data.stock === 0) {
+                return false;
+            }
+        }
         if (year.data.count < 0)
             return false;
         const grape = year.wine.data.grape;
@@ -1199,8 +1202,12 @@ class WinelistUI {
         let year_tr = new YearTR(year, showVineyard, showWine);
         this.year_rows.push(year_tr);
         this.stock_tds.push(year_tr.stock);
-        if (!this.stock_mode)
+        if (this.stock_mode) {
+            year_tr.startStockMode();
+        }
+        else {
             year_tr.stock.hide();
+        }
         this.tbody.appendChild(year_tr.tr);
     }
     addVineyardEditRow(vineyard) {
@@ -1246,6 +1253,9 @@ class WinelistUI {
             for (let row of this.year_rows)
                 row.stopStockMode();
         }
+    }
+    isStockMode() {
+        return this.stock_mode;
     }
     applyAllStock() {
         this.data.applyAllStock();

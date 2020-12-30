@@ -282,7 +282,7 @@ class Wine extends DataWrapper {
         super(store, local_id, data);
         this.years = [];
         this.years_by_year = new Map();
-        this.stock_applier = (y) => y.applyStock;
+        this.stock_applier = (y) => y.applyStock();
     }
     getWriteStore() { return this.store.getWriteStore('wines'); }
     hasYear(y) {
@@ -383,6 +383,7 @@ class Year extends DataWrapper {
             this.data.count = this.data.stock;
             this.changed();
             g_watchpoints.totals.notifyDelta(price_delta, count_delta);
+            this.store.recordLogApplyStock(this, count_delta);
         }
     }
     resetStock() {
@@ -434,8 +435,9 @@ class Year extends DataWrapper {
         this.data.age = new_age;
         this.changed();
     }
-    reviveDeleted(new_count, new_price, new_comment) {
+    reviveDeleted(new_count, new_stock, new_price, new_comment) {
         this.data.count = new_count;
+        this.data.stock = new_stock;
         if (new_price)
             this.data.price = new_price;
         if (new_comment)
@@ -603,17 +605,25 @@ class DataStore {
         return this.createWine(data);
     }
     getOrCreateYear(wine, year, count, price, comment) {
+        let stock_mode = (this.ui && this.ui.isStockMode());
+        let stock = 0;
+        if (stock_mode) {
+            stock = count;
+            count = 0;
+        }
         let maybe_deleted = wine.getDeletedYear(year);
         if (maybe_deleted) {
-            maybe_deleted.reviveDeleted(count, price, comment);
-            this.recordLog(maybe_deleted, count);
+            maybe_deleted.reviveDeleted(count, stock, price, comment);
+            if (!stock_mode)
+                this.recordLog(maybe_deleted, count);
             if (this.ui)
                 this.ui.reviveYear(maybe_deleted);
             return;
         }
-        let data = new YearData(0, 1, wine.local_id, year, count, 0, price, 0, 0, 0, 0, comment);
+        let data = new YearData(0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, comment);
         let y = this.createYear(data);
-        this.recordLog(y, count);
+        if (!stock_mode)
+            this.recordLog(y, count);
     }
     recordLog(y, delta) {
         let date = getDateString();
@@ -624,6 +634,18 @@ class DataStore {
         else {
             let reason = delta > 0 ? this.default_reason_add : this.default_reason_remove;
             let data = new LogData(0, 1, date, y.local_id, delta, reason, "");
+            this.createLog(data);
+        }
+    }
+    recordLogApplyStock(y, delta) {
+        let date = getDateString();
+        let log = y.log_by_date.get(date);
+        let kReasonStock = 20;
+        if (log && log.data.reason === kReasonStock) {
+            log.updateDelta(delta);
+        }
+        else {
+            let data = new LogData(0, 1, date, y.local_id, delta, kReasonStock, '');
             this.createLog(data);
         }
     }

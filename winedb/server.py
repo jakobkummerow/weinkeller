@@ -56,8 +56,10 @@ class WineHandler(BaseHTTPRequestHandler):
       mimetype = None
       if path.endswith(".html"):
         mimetype = "text/html; charset=utf-8"
-      elif path.endswith(".js") or path.endswith(".js.map"):
+      elif path.endswith(".js"):
         mimetype = "text/javascript"
+      elif path.endswith(".js.map"):
+        mimetype = "application/json"
       elif path.endswith(".css"):
         mimetype = "text/css"
       elif path.endswith(".ts"):

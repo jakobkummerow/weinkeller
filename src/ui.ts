@@ -117,7 +117,7 @@ abstract class HideableNameTD {
       });
       this.span.appendChild(this.stock_apply_button);
     }
-    return this.stock_apply_button
+    return this.stock_apply_button;
   }
   startStockMode() {
     if (this.stock_mode) return;
@@ -948,7 +948,11 @@ class TableSorter {
   }
 
   private isShown(year: Year) {
-    if (this.only_existing && year.data.count === 0) return false;
+    if (this.only_existing && year.data.count === 0) {
+      if (!this.winelist.isStockMode() || year.data.stock === 0) {
+        return false;
+      }
+    }
     if (year.data.count < 0) return false;
     const grape = year.wine.data.grape;
     if (this.color_filter !== GrapeColor.kAny &&
@@ -1210,7 +1214,11 @@ class WinelistUI {
     let year_tr = new YearTR(year, showVineyard, showWine);
     this.year_rows.push(year_tr);
     this.stock_tds.push(year_tr.stock);
-    if (!this.stock_mode) year_tr.stock.hide();
+    if (this.stock_mode) {
+      year_tr.startStockMode();
+    } else {
+      year_tr.stock.hide();
+    }
     this.tbody.appendChild(year_tr.tr);
   }
   private addVineyardEditRow(vineyard: Vineyard) {
@@ -1247,6 +1255,9 @@ class WinelistUI {
       for (let stock of this.edit_stock_tds) stock.hide();
       for (let row of this.year_rows) row.stopStockMode();
     }
+  }
+  public isStockMode() {
+    return this.stock_mode;
   }
   public applyAllStock() {
     this.data.applyAllStock();

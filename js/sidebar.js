@@ -27,6 +27,7 @@ var kSideLang = {
         11: "Getrunken",
         12: "Verschenkt",
         13: "Verlust",
+        20: "Inventur",
     },
     special_tools: "Spezial-Tools",
     forget_all: "Lokale Daten löschen",
@@ -39,7 +40,7 @@ function IsValidReasonFor(reason, delta) {
     if (delta > 0)
         return reason > 0 && reason < 10;
     if (delta < 0)
-        return reason > 10;
+        return reason > 10 && reason < 20;
     return reason === 0;
 }
 function FormatReason(int) {

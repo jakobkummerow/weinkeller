@@ -28,6 +28,7 @@ var kSideLang = {
     11: "Getrunken",
     12: "Verschenkt",
     13: "Verlust",
+    20: "Inventur",  // Careful: hard-coded in data.ts!
   },
   special_tools: "Spezial-Tools",
   forget_all: "Lokale Daten löschen",
@@ -39,7 +40,7 @@ var kSideLang = {
 
 function IsValidReasonFor(reason: number, delta: number) {
   if (delta > 0) return reason > 0 && reason < 10;
-  if (delta < 0) return reason > 10;
+  if (delta < 0) return reason > 10 && reason < 20;
   return reason === 0;
 }
 
