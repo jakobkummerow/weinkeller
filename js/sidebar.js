@@ -27,7 +27,7 @@ var kSideLang = {
         11: "Getrunken",
         12: "Verschenkt",
         13: "Verlust",
-        20: "Inventur",
+        20: "Inventur", // Careful: hard-coded in data.ts!
     },
     special_tools: "Spezial-Tools",
     forget_all: "Lokale Daten löschen",

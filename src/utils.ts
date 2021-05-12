@@ -25,6 +25,7 @@ const kKnownGrapes: any = {
   "Merlot": GrapeColor.kRed,
   "Muskateller": GrapeColor.kWhite,
   "Müller-Thurgau": GrapeColor.kWhite,
+  "Primitivo": GrapeColor.kRed,
   "Regent": GrapeColor.kRed,
   "Riesling": GrapeColor.kWhite,
   "Rioja": GrapeColor.kRed,
