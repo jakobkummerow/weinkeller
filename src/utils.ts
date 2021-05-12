@@ -78,6 +78,23 @@ function ColorForGrape(name: string) {
   return kGrapeColorMap.get(name);
 }
 
+enum LogReason {
+  kUnknown = 0,
+  kBought = 1,
+  kExisting = 2,
+  kReceivedAsGift = 3,
+  kConsumed = 11,
+  kGivenAway = 12,
+  kLost = 13,
+  kStock = 20,
+}
+
+function IsValidReasonFor(reason: number, delta: number) {
+  if (delta > 0) return reason > 0 && reason < 10;
+  if (delta < 0) return reason > 10 && reason < 20;
+  return reason === 0;
+}
+
 function AddC<K extends keyof HTMLElementTagNameMap>(parent: Node, nodetype: K):
     HTMLElementTagNameMap[K] {
   return parent.appendChild(document.createElement(nodetype));

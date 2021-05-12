@@ -458,6 +458,12 @@ class Log extends DataWrapper {
     getWriteStore() { return this.store.getWriteStore('log'); }
     updateDelta(count) {
         this.data.delta += count;
+        if (!IsValidReasonFor(this.data.reason, this.data.delta)) {
+            this.data.reason =
+                this.data.delta > 0 ? this.store.default_reason_add :
+                    this.data.delta < 0 ? this.store.default_reason_remove :
+                        LogReason.kUnknown;
+        }
         this.changed();
     }
     updateReason(reason) {
@@ -640,7 +646,7 @@ class DataStore {
     recordLogApplyStock(y, delta) {
         let date = getDateString();
         let log = y.log_by_date.get(date);
-        let kReasonStock = 20;
+        let kReasonStock = LogReason.kStock;
         if (log && log.data.reason === kReasonStock) {
             log.updateDelta(delta);
         }

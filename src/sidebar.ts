@@ -21,14 +21,14 @@ var kSideLang = {
   countries_all: "alle Länder",
   regions_all: "alle Regionen",
   reasons: {
-    0: "unbekannt",
-    1: "Gekauft",
-    2: "Bestand",
-    3: "Geschenkt bek.",
-    11: "Getrunken",
-    12: "Verschenkt",
-    13: "Verlust",
-    20: "Inventur",  // Careful: hard-coded in data.ts!
+    [LogReason.kUnknown]: "unbekannt",
+    [LogReason.kBought]: "Gekauft",
+    [LogReason.kExisting]: "Bestand",
+    [LogReason.kReceivedAsGift]: "Geschenkt bek.",
+    [LogReason.kConsumed]: "Getrunken",
+    [LogReason.kGivenAway]: "Verschenkt",
+    [LogReason.kLost]: "Verlust",
+    [LogReason.kStock]: "Inventur",
   },
   special_tools: "Spezial-Tools",
   forget_all: "Lokale Daten löschen",
@@ -37,12 +37,6 @@ var kSideLang = {
   refetch_all: "Alles neu laden",
   push_all: "Alles neu senden",
 };
-
-function IsValidReasonFor(reason: number, delta: number) {
-  if (delta > 0) return reason > 0 && reason < 10;
-  if (delta < 0) return reason > 10 && reason < 20;
-  return reason === 0;
-}
 
 function FormatReason(int: number): string {
   return (kSideLang.reasons as any)[int];

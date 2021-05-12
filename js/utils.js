@@ -74,6 +74,24 @@ function ColorForGrape(name) {
         return GrapeColor.kUnknown;
     return kGrapeColorMap.get(name);
 }
+var LogReason;
+(function (LogReason) {
+    LogReason[LogReason["kUnknown"] = 0] = "kUnknown";
+    LogReason[LogReason["kBought"] = 1] = "kBought";
+    LogReason[LogReason["kExisting"] = 2] = "kExisting";
+    LogReason[LogReason["kReceivedAsGift"] = 3] = "kReceivedAsGift";
+    LogReason[LogReason["kConsumed"] = 11] = "kConsumed";
+    LogReason[LogReason["kGivenAway"] = 12] = "kGivenAway";
+    LogReason[LogReason["kLost"] = 13] = "kLost";
+    LogReason[LogReason["kStock"] = 20] = "kStock";
+})(LogReason || (LogReason = {}));
+function IsValidReasonFor(reason, delta) {
+    if (delta > 0)
+        return reason > 0 && reason < 10;
+    if (delta < 0)
+        return reason > 10 && reason < 20;
+    return reason === 0;
+}
 function AddC(parent, nodetype) {
     return parent.appendChild(document.createElement(nodetype));
 }
