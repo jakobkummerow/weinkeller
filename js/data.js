@@ -21,7 +21,7 @@ class DataObject {
             return false;
         let changed = false;
         for (let key of properties) {
-            if (this[key] !== other[key]) {
+            if (other.hasOwnProperty(key) && this[key] !== other[key]) {
                 this[key] = other[key];
                 changed = true;
             }
@@ -74,7 +74,7 @@ class WineData extends DataObject {
     }
 }
 class YearData extends DataObject {
-    constructor(server_id, dirty, wine_id, year, count, stock, price, rating, value, sweetness, age, comment) {
+    constructor(server_id, dirty, wine_id, year, count, stock, price, rating, value, sweetness, age, comment, location) {
         super(server_id, dirty);
         this.wine_id = wine_id;
         this.year = year;
@@ -86,15 +86,18 @@ class YearData extends DataObject {
         this.sweetness = sweetness;
         this.age = age;
         this.comment = comment;
+        this.location = location;
     }
     static fromStruct(y) {
-        return new YearData(y.server_id, y.dirty, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.comment);
+        // Fields that were added later need special handling to fill in defaults.
+        let location = y.location === undefined ? "" : y.location;
+        return new YearData(y.server_id, y.dirty, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.comment, location);
     }
     maybeUpdate(new_data) {
         this.assertSame(new_data, ['server_id', 'wine_id', 'year']);
         return this.applyUpdates(new_data, [
             'count', 'stock', 'price', 'rating', 'value', 'sweetness', 'age',
-            'comment'
+            'comment', 'location'
         ]);
     }
 }
@@ -170,6 +173,7 @@ class Watchpoints {
         this.grapes = new StringAdditionObservable();
         this.countries = new StringAdditionObservable();
         this.regions = new StringAdditionObservable();
+        this.locations = new StringAdditionObservable();
     }
 }
 var g_watchpoints = new Watchpoints();
@@ -392,24 +396,27 @@ class Year extends DataWrapper {
         if (changed)
             this.changed();
     }
-    editPriceComment(new_price, new_comment) {
-        let price_changed = false, comment_changed = false;
+    editPriceCommentLocation(new_price, new_comment, new_location) {
+        let changed = false;
         let price_delta = 0;
         let old_price = this.data.price;
         if (old_price !== new_price) {
             price_delta = new_price - old_price;
             this.data.price = new_price;
-            price_changed = true;
+            changed = true;
+            g_watchpoints.totals.notifyDelta(price_delta * this.data.count, 0);
         }
         if (this.data.comment !== new_comment) {
             this.data.comment = new_comment;
-            comment_changed = true;
+            changed = true;
         }
-        if (price_changed || comment_changed)
+        if (this.data.location !== new_location) {
+            this.data.location = new_location;
+            this.store.location_cache.update(new_location);
+            changed = true;
+        }
+        if (changed)
             this.changed();
-        if (price_changed) {
-            g_watchpoints.totals.notifyDelta(price_delta * this.data.count, 0);
-        }
     }
     updateRating(new_rating) {
         if (this.data.rating === new_rating)
@@ -435,13 +442,15 @@ class Year extends DataWrapper {
         this.data.age = new_age;
         this.changed();
     }
-    reviveDeleted(new_count, new_stock, new_price, new_comment) {
+    reviveDeleted(new_count, new_stock, new_price, new_comment, new_location) {
         this.data.count = new_count;
         this.data.stock = new_stock;
         if (new_price)
             this.data.price = new_price;
         if (new_comment)
             this.data.comment = new_comment;
+        if (new_location)
+            this.data.location = new_location;
         // Let's keep other old data, maybe it's useful.
         this.changed();
         g_watchpoints.totals.notifyDelta(new_count * this.data.price, new_count);
@@ -550,6 +559,26 @@ class GrapeCache {
         return grapes.sort();
     }
 }
+class LocationCache {
+    constructor(store) {
+        this.store = store;
+        this.locations = new Set();
+    }
+    update(location) {
+        if (this.locations.has(location))
+            return;
+        this.locations.add(location);
+        g_watchpoints.locations.notifyObservers(location);
+    }
+    getLocations() {
+        let locations = [];
+        for (let l of this.locations.values()) {
+            if (l)
+                locations.push(l);
+        }
+        return locations.sort();
+    }
+}
 class DataStore {
     constructor() {
         this.vineyards = [];
@@ -575,6 +604,7 @@ class DataStore {
         this.connection = null;
         this.geo_cache = new GeoCache(this);
         this.grape_cache = new GrapeCache(this);
+        this.location_cache = new LocationCache(this);
     }
     dataChanged() {
         this.global_dirtybit = true;
@@ -610,7 +640,7 @@ class DataStore {
         let data = new WineData(0, 1, vineyard.local_id, name, "", "");
         return this.createWine(data);
     }
-    getOrCreateYear(wine, year, count, price, comment) {
+    getOrCreateYear(wine, year, count, price, comment, location) {
         let stock_mode = (this.ui && this.ui.isStockMode());
         let stock = 0;
         if (stock_mode) {
@@ -619,14 +649,14 @@ class DataStore {
         }
         let maybe_deleted = wine.getDeletedYear(year);
         if (maybe_deleted) {
-            maybe_deleted.reviveDeleted(count, stock, price, comment);
+            maybe_deleted.reviveDeleted(count, stock, price, comment, location);
             if (!stock_mode)
                 this.recordLog(maybe_deleted, count);
             if (this.ui)
                 this.ui.reviveYear(maybe_deleted);
             return;
         }
-        let data = new YearData(0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, comment);
+        let data = new YearData(0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, comment, location);
         let y = this.createYear(data);
         if (!stock_mode)
             this.recordLog(y, count);
@@ -669,6 +699,9 @@ class DataStore {
         if (!vineyard)
             return result;
         return vineyard.getWineNames();
+    }
+    getStorageLocations() {
+        return this.location_cache.getLocations();
     }
     iterateVineyards(callback) {
         for (let v of this.vineyards) {
@@ -969,6 +1002,7 @@ class DataStore {
         if (this.ui) {
             this.ui.addYear(y);
         }
+        this.location_cache.update(data.location);
         if (data.isDirty())
             this.dataChanged();
         // We're not calling g_watchpoints.totals.notifyDelta here because

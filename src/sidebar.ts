@@ -11,7 +11,8 @@ var kSideLang = {
   stock_reset_sure: "Dies setzt alle Inventur-Daten auf 0 zurück. Sicher?",
   stock_apply_sure: "Dies überschreibt den Bestand aller Weine mit den " +
                     "Inventur-Daten. Sicher?",
-  only_existing: "Nur vorhandene Weine anzeigen",
+  nonexisting: "Ausgetrunkene",
+  storage_location: "Lagerort",
   filters: "Anzeigen:",
   colors_all: "alle Farben",
   color_only_red: "nur rot",
@@ -87,6 +88,7 @@ abstract class DynamicDropdown {
     do {
       p = p.nextSibling as HTMLOptionElement;
     } while (p.value !== kUnknown && p.value < value);
+    this.select.insertBefore(option, p);
   }
 
   public updateShown() {
@@ -138,7 +140,7 @@ class CountryFilter extends DynamicDropdown {
 
 class RegionFilter extends DynamicDropdown {
   protected all_label = kSideLang.regions_all;
-  private country_filter: string;
+  private country_filter: string = kAny;
   protected getValues() {
     return this.data.geo_cache.getAllRegions();
   }
@@ -166,8 +168,10 @@ class Sidebar {
   private stock_mode = document.createElement('input');
   private stock_mode_value = false;
   private stock_buttons = document.createElement('span');
-  private only_existing = document.createElement('input');
-  private only_existing_value = true;
+  private show_nonexisting = document.createElement('input');
+  private nonexisting_value = false;
+  private storage_location = document.createElement('input');
+  private storage_location_value = false;
   private filter_div = document.createElement('div');
   private grape_color_select = document.createElement('select');
   private grape_select = new GrapeFilter();
@@ -185,16 +189,6 @@ class Sidebar {
   }
 
   create() {
-    // Show existing.
-    let existing_div = AddC(this.div, 'div');
-    existing_div.className = 'setting';
-    let existing_label = AddC(existing_div, 'label');
-    existing_label.appendChild(this.only_existing);
-    this.only_existing.type = 'checkbox';
-    this.only_existing.checked = this.only_existing_value;
-    existing_div.onclick = (e) => { this.toggleOnlyExisting(e); };
-    AddT(existing_label, kSideLang.only_existing);
-
     // Filters.
     this.div.appendChild(this.filter_div);
     this.filter_div.className = 'setting';
@@ -228,6 +222,22 @@ class Sidebar {
         this.region_select.create(this.winelist.data, (_) => {
           this.changeRegionFilter();
         }));
+    // Spacer.
+    AddC(this.filter_div, 'hr');
+    // Only existing.
+    let existing_label = AddC(this.filter_div, 'label');
+    existing_label.appendChild(this.show_nonexisting);
+    this.show_nonexisting.type = 'checkbox';
+    this.show_nonexisting.checked = this.nonexisting_value;
+    existing_label.onclick = (e) => { this.toggleOnlyExisting(e); };
+    AddT(existing_label, kSideLang.nonexisting);
+    // Storage location.
+    let storage_label = AddC(this.filter_div, 'label');
+    storage_label.appendChild(this.storage_location);
+    this.storage_location.type = 'checkbox';
+    this.storage_location.checked = this.storage_location_value;
+    storage_label.onclick = (e) => { this.toggleStorageLocation(e); };
+    AddT(storage_label, kSideLang.storage_location);
 
     // Reason to add.
     let reason_add_div = AddC(this.div, 'div');
@@ -389,9 +399,16 @@ class Sidebar {
 
   private toggleOnlyExisting(e: MouseEvent) {
     if ((e.target as HTMLElement).tagName == "LABEL") return;
-    let only_existing = !this.only_existing_value;
-    this.only_existing.checked = this.only_existing_value = only_existing;
-    this.winelist.setOnlyExisting(only_existing);
+    let nonexisting = !this.nonexisting_value;
+    this.show_nonexisting.checked = this.nonexisting_value = nonexisting;
+    this.winelist.setOnlyExisting(!nonexisting);
+  }
+
+  private toggleStorageLocation(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName == "LABEL") return;
+    let location = !this.storage_location_value;
+    this.storage_location.checked = this.storage_location_value = location;
+    this.winelist.setShowStorageLocation(location);
   }
 
   private changeGrapeColorFilter() {

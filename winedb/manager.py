@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS years (
   value REAL DEFAULT 0,
   sweetness REAL DEFAULT 0,
   age INTEGER DEFAULT 0,
-  comment TEXT,
+  comment TEXT DEFAULT "",
+  location TEXT DEFAULT "",
   lastchange INTEGER
 )"""
 
@@ -163,7 +164,7 @@ class Manager:
         c.execute(CREATE_LOG)
         c.execute(CREATE_DATA)
         self._conn.commit()
-        version = 4
+        version = 5
       else:
         print("Updating database version 0->1...")
         self._BackupDatabase(filename, version)
@@ -196,6 +197,14 @@ class Manager:
       self._conn.execute("PRAGMA user_version = 4")
       self._conn.commit()
       version = 4
+    if version < 5:
+      print("Updating database version 4->5...")
+      self._BackupDatabase(filename, version)
+      self._conn.execute(
+          "ALTER TABLE years ADD COLUMN location TEXT DEFAULT \"\"")
+      self._conn.execute("PRAGMA user_version = 5")
+      self._conn.commit()
+      version = 5
 
   def _GetLastChange(self, table):
     c = self._conn.execute("SELECT MAX(lastchange) FROM %s" % table)
@@ -272,7 +281,8 @@ class Manager:
           "value": row["value"],
           "sweetness": row["sweetness"],
           "age": row["age"],
-          "comment": row["comment"]
+          "comment": row["comment"],
+          "location": row["location"]
       })
     log = []
     cursor = self.Execute("SELECT * FROM log WHERE lastchange>?",
@@ -399,21 +409,22 @@ class Manager:
         print("INSERT year: %s" % y)
         c = self.Execute("""
             INSERT INTO years(wine, year, count, stock, price, rating, value,
-                              sweetness, age, comment, lastchange)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              sweetness, age, comment, location, lastchange)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (y["wine_id"], y["year"], y["count"], y["stock"], y["price"],
              y["rating"], y["value"], y["sweetness"], y["age"], y["comment"],
-             self._lastchange))
+             y["location"], self._lastchange))
         return c.lastrowid
       server_id = r["id"]
     print("UPDATE year: %s" % y)
     self.Execute("""
         UPDATE years
         SET count=?, stock=?, price=?, rating=?, value=?, sweetness=?, age=?,
-            comment=?, lastchange=?
+            comment=?, location=?, lastchange=?
         WHERE id=?""",
         (y["count"], y["stock"], y["price"], y["rating"], y["value"],
-         y["sweetness"], y["age"], y["comment"], self._lastchange, server_id))
+         y["sweetness"], y["age"], y["comment"], y["location"],
+         self._lastchange, server_id))
     return server_id
 
   def _SetLog(self, l):
@@ -873,6 +884,9 @@ class Manager:
     r = c.fetchone()
     return {"count": r["count"], "price": r["price"]}
 
+  #################  CSV Export. ###############################
+  # (Remember to keep this when deleting v1!)
+
   def _FormatRating(self, rating):
     rating = int(rating)
     return "\u2605" * rating + "\u2606" * (5 - rating)
@@ -886,8 +900,8 @@ class Manager:
       SELECT years.year as year, years.count as count,
              years.price as price, years.rating as rating, years.value as value,
              years.sweetness as sweetness, years.age as age,
-             years.comment as comment, wines.name as wine_name,
-             vineyards.name as vineyard_name
+             years.comment as comment, years.location as location,
+             wines.name as wine_name, vineyards.name as vineyard_name
       FROM years
       INNER JOIN wines ON years.wine = wines.id
       INNER JOIN vineyards ON wines.vineyard = vineyards.id
@@ -895,12 +909,12 @@ class Manager:
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Weingut", "Wein", "Jahr", "Anzahl", "Preis", "Kommentar",
-                     "Bewertung", "Preis/Leist", "Süße", "Alter"])
+                     "Bewertung", "Preis/Leist", "Süße", "Alter", "Lagerort"])
     for r in c:
       row = [r["vineyard_name"], r["wine_name"], r["year"], r["count"],
              r["price"], r["comment"], self._FormatRating(r["rating"]),
              self._FormatRating(r["value"]), self._FormatRating(r["sweetness"]),
-             self._FormatAge(r["age"])]
+             self._FormatAge(r["age"]), r["location"]]
       writer.writerow(row)
     return output.getvalue()
 

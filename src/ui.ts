@@ -13,6 +13,7 @@ var kLang = {
   value: 'Preis/Leist',
   sweetness: 'Süße',
   age: 'Alter',
+  location: 'Lagerort',
   checkmark: '\u2714',
   edit_button_text: '\u270E',  // pencil
   save_string: '\u2714',       // checkmark
@@ -41,6 +42,8 @@ var kPricePattern = "[0-9]{1,3}([\.|,][0-9]{1,2})?";
 
 const kRow = 'tr';
 const kCell = 'td';
+const kLocationListId = 'storage_location_completions';
+
 function createCell() {
   return document.createElement(kCell);
 }
@@ -326,6 +329,34 @@ class CommentTD extends EditableTD {
   protected readData() { return this.year.data.comment; }
 }
 
+class LocationTD extends EditableTD {
+  private hidden = false;  // We'll call {hide()} on creation.
+
+  constructor(year: Year) {
+    super(year);
+  }
+  value() {
+    if (!this.input) throw 'must startEditing() before calling value()';
+    return this.input.value.trim();
+  }
+  protected readData() { return this.year.data.location; }
+  protected configureInput(input: HTMLInputElement) {
+    input.setAttribute('list', kLocationListId);
+    input.size = 10;
+  }
+
+  public hide() {
+    if (this.hidden) return;
+    this.hidden = true;
+    this.td.style.display = 'none';
+  }
+  public show() {
+    if (!this.hidden) return;
+    this.hidden = false;
+    this.td.style.display = 'table-cell';
+  }
+}
+
 class ButtonTD {
   private td = createCell();
   private button = document.createElement('button');
@@ -460,6 +491,7 @@ class YearTR extends HideableTR {
   stock: StockTD;
   price: PriceTD;
   comment: CommentTD;
+  location: LocationTD;
   button: ButtonTD;
   rating: RatingTD;
   value: ValueTD;
@@ -478,6 +510,7 @@ class YearTR extends HideableTR {
     this.stock = new StockTD(this.year);
     this.price = new PriceTD(this.year);
     this.comment = new CommentTD(this.year);
+    this.location = new LocationTD(this.year);
     this.button = new ButtonTD(this);
     this.rating = new RatingTD(this.year);
     this.value = new ValueTD(this.year);
@@ -491,6 +524,8 @@ class YearTR extends HideableTR {
     this.tr.appendChild(this.stock.create());
     this.tr.appendChild(this.price.create());
     this.tr.appendChild(this.comment.create());
+    this.tr.appendChild(this.location.create());
+    this.location.hide();
     this.tr.appendChild(this.button.create());
     this.tr.appendChild(this.rating.create());
     this.tr.appendChild(this.value.create());
@@ -518,6 +553,7 @@ class YearTR extends HideableTR {
     if (this.editing) return;  // Don't interfere with the user.
     this.price.update();
     this.comment.update();
+    this.location.update();
   }
 
   clickEdit() {
@@ -525,6 +561,7 @@ class YearTR extends HideableTR {
       this.editing = true;
       this.price.startEditing(this.getKeyupHandler());
       this.comment.startEditing(this.getKeyupHandler());
+      this.location.startEditing(this.getKeyupHandler());
       this.button.startEditing();
     } else {
       this.stopEditing(true);
@@ -536,10 +573,12 @@ class YearTR extends HideableTR {
         alert(kLang.invalid_price);
         return;
       }
-      this.year.editPriceComment(this.price.value(), this.comment.value());
+      this.year.editPriceCommentLocation(
+          this.price.value(), this.comment.value(), this.location.value());
     }
     this.price.stopEditing();
     this.comment.stopEditing();
+    this.location.stopEditing();
     this.button.stopEditing();
     this.editing = false;
   }
@@ -568,6 +607,13 @@ class YearTR extends HideableTR {
     this.wine.stopStockMode();
     this.year_td.stopStockMode();
   }
+  showLocation(show_location: boolean) {
+    if (show_location) {
+      this.location.show();
+    } else {
+      this.location.hide();
+    }
+  }
 }
 
 class InputTD {
@@ -584,6 +630,9 @@ class InputTD {
   }
   clear() {
     this.input.value = "";
+  }
+  getInput() {
+    return this.input;
   }
 }
 
@@ -659,6 +708,26 @@ class PriceInputTD extends InputTD {
   }
 }
 
+class LocationInputTD extends InputTD {
+  private hidden = false;  // We'll call {hide()} on creation.
+
+  constructor() {
+    super(kLang.location);
+    this.td.classList.add('location');
+    this.input.setAttribute('list', kLocationListId);
+  }
+  public hide() {
+    if (this.hidden) return;
+    this.hidden = true;
+    this.td.style.display = 'none';
+  }
+  public show() {
+    if (!this.hidden) return;
+    this.hidden = false;
+    this.td.style.display = 'table-cell';
+  }
+}
+
 class EmptyTD {
   td = createCell();
   private hidden = false;
@@ -684,10 +753,11 @@ class EditTR extends HideableTR {
   stock = new EmptyTD();
   price = new PriceInputTD();
   comment = new InputTD(kLang.comment);
+  location: LocationInputTD;
 
   constructor(
-      public data: DataStore, public vineyard: Vineyard|null = null,
-      public wine: Wine|null = null) {
+      public data: DataStore, public vineyard: Vineyard|null,
+      public wine: Wine|null) {
     super();
     if (this.vineyard) {
       AddC(this.tr, kCell);
@@ -706,6 +776,9 @@ class EditTR extends HideableTR {
     this.tr.appendChild(this.stock.td);
     this.tr.appendChild(this.price.td);
     this.tr.appendChild(this.comment.td);
+    this.location = new LocationInputTD();
+    this.tr.appendChild(this.location.td);
+    this.location.hide();
 
     let button_td = AddC(this.tr, kCell);
     let button = AddC(button_td, 'button');
@@ -746,12 +819,14 @@ class EditTR extends HideableTR {
     }
 
     // Commit.
-    let vineyard = this.vineyard || this.data.getOrCreateVineyard(vineyard_name);
+    let vineyard =
+        this.vineyard || this.data.getOrCreateVineyard(vineyard_name);
     let wine = this.wine || this.data.getOrCreateWine(vineyard, wine_name);
     let year = this.year.getNumberValue();
     let count = this.count.getNumberValue();
     let price = this.price.getNumberValue();
     let comment = this.comment.getStringValue();
+    let location = this.location.getStringValue();
     // One more check which we couldn't do before. This can only fire if
     // vineyard and wine existed already, so we effectively haven't committed
     // anything yet in that case.
@@ -759,7 +834,7 @@ class EditTR extends HideableTR {
       alert(kLang.year_exists);
       return;
     }
-    this.data.getOrCreateYear(wine, year, count, price, comment);
+    this.data.getOrCreateYear(wine, year, count, price, comment, location);
 
     // Clear.
     if (this.vineyard_td) this.vineyard_td.clear();
@@ -849,6 +924,32 @@ class YearDeletionWatcher {
     g_watchpoints.deletions.registerObserver(this);
   }
   update() { this.sorter.sortAgain(); }
+}
+
+class LocationCompletionsList {
+  private list: HTMLDataListElement;
+  constructor(data: DataStore) {
+    this.list = AddC(document.body, 'datalist');
+    this.list.id = kLocationListId;
+    PopulateDataList(this.list, data.getStorageLocations());
+    g_watchpoints.locations.registerObserver(this);
+  }
+  add(location: string) {
+    let sibling = this.list.firstChild;
+    let comparison = location.toLowerCase();
+    while (true) {
+      if (sibling === null) {
+        AddC(this.list, 'option').value = location;
+        return;
+      }
+      let existing = (sibling as HTMLOptionElement).value.toLowerCase();
+      if (existing > comparison) break;
+      sibling = sibling.nextSibling;
+    }
+    let entry = document.createElement('option');
+    entry.value = location;
+    this.list.insertBefore(entry, sibling);
+  }
 }
 
 class TableSorter {
@@ -1095,10 +1196,13 @@ class WinelistUI {
   public edit_rows: EditTR[] = [];
   public vineyard_edit_rows = new Map<Vineyard, EditTR>();
   public wine_edit_rows = new Map<Wine, EditTR>();
+  private show_location = false;
+  private location_header_td: HTMLTableCellElement;
   private stock_mode = true;
-  private stock_header_td: HTMLTableDataCellElement;
+  private stock_header_td: HTMLTableCellElement;
   private stock_tds: StockTD[] = [];
   private edit_stock_tds: EmptyTD[] = [];
+  private edit_location_tds: LocationInputTD[] = [];
   private sidebar: Sidebar;
   private log: LogUI;
   private totals: TotalsTR;
@@ -1136,6 +1240,8 @@ class WinelistUI {
     let price_td = this.addHeaderTD(tr, kLang.price, SortMode.kPrice);
     price_td.classList.add('centered');
     this.addHeaderTD(tr, kLang.comment);
+    this.location_header_td = this.addHeaderTD(tr, kLang.location);
+    this.location_header_td.style.display = 'none';
     this.addHeaderTD(tr, "");  // Buttons.
     this.addHeaderTD(tr, kLang.rating, SortMode.kRating);
     this.addHeaderTD(tr, kLang.value, SortMode.kValue);
@@ -1165,12 +1271,16 @@ class WinelistUI {
     let add_row = new EditTR(this.data, null, null);
     add_row.stock.hide();
     this.edit_stock_tds.push(add_row.stock);
+    this.edit_location_tds.push(add_row.location);
     tfoot.appendChild(add_row.tr);
 
     this.totals = new TotalsTR(this.data);
     this.totals.stock.hide();
     this.edit_stock_tds.push(this.totals.stock);
     tfoot.appendChild(this.totals.tr);
+
+    // Attaches itself to the document.
+    new LocationCompletionsList(this.data);
 
     // Sidebar.
     this.sidebar.create();
@@ -1219,6 +1329,7 @@ class WinelistUI {
     } else {
       year_tr.stock.hide();
     }
+    year_tr.showLocation(this.show_location);
     this.tbody.appendChild(year_tr.tr);
   }
   private addVineyardEditRow(vineyard: Vineyard) {
@@ -1226,6 +1337,7 @@ class WinelistUI {
     this.edit_rows.push(edit);
     this.vineyard_edit_rows.set(vineyard, edit);
     this.edit_stock_tds.push(edit.stock);
+    this.edit_location_tds.push(edit.location);
     if (!this.stock_mode) edit.stock.hide();
     return edit;
   }
@@ -1234,6 +1346,7 @@ class WinelistUI {
     this.edit_rows.push(edit);
     this.wine_edit_rows.set(wine, edit);
     this.edit_stock_tds.push(edit.stock);
+    this.edit_location_tds.push(edit.location);
     if (!this.stock_mode) edit.stock.hide();
     return edit;
   }
@@ -1267,6 +1380,18 @@ class WinelistUI {
   }
   public setOnlyExisting(only_existing: boolean) {
     this.sorter.setOnlyExisting(only_existing);
+  }
+  public setShowStorageLocation(show_storage_location: boolean) {
+    if (show_storage_location === this.show_location) return;
+    this.show_location = show_storage_location;
+    if (show_storage_location) {
+      this.location_header_td.style.display = 'table-cell';
+      for (let location of this.edit_location_tds) location.show();
+    } else {
+      this.location_header_td.style.display = 'none';
+      for (let location of this.edit_location_tds) location.hide();
+    }
+    for (let row of this.year_rows) row.showLocation(show_storage_location);
   }
   public setColorFilter(color: GrapeColor) {
     this.sorter.setColorFilter(color);

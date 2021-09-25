@@ -10,7 +10,8 @@ var kSideLang = {
     stock_reset_sure: "Dies setzt alle Inventur-Daten auf 0 zurück. Sicher?",
     stock_apply_sure: "Dies überschreibt den Bestand aller Weine mit den " +
         "Inventur-Daten. Sicher?",
-    only_existing: "Nur vorhandene Weine anzeigen",
+    nonexisting: "Ausgetrunkene",
+    storage_location: "Lagerort",
     filters: "Anzeigen:",
     colors_all: "alle Farben",
     color_only_red: "nur rot",
@@ -80,6 +81,7 @@ class DynamicDropdown {
         do {
             p = p.nextSibling;
         } while (p.value !== kUnknown && p.value < value);
+        this.select.insertBefore(option, p);
     }
     updateShown() {
         let p = this.select.firstChild;
@@ -132,6 +134,7 @@ class RegionFilter extends DynamicDropdown {
     constructor() {
         super(...arguments);
         this.all_label = kSideLang.regions_all;
+        this.country_filter = kAny;
     }
     getValues() {
         return this.data.geo_cache.getAllRegions();
@@ -163,8 +166,10 @@ class Sidebar {
         this.stock_mode = document.createElement('input');
         this.stock_mode_value = false;
         this.stock_buttons = document.createElement('span');
-        this.only_existing = document.createElement('input');
-        this.only_existing_value = true;
+        this.show_nonexisting = document.createElement('input');
+        this.nonexisting_value = false;
+        this.storage_location = document.createElement('input');
+        this.storage_location_value = false;
         this.filter_div = document.createElement('div');
         this.grape_color_select = document.createElement('select');
         this.grape_select = new GrapeFilter();
@@ -179,15 +184,6 @@ class Sidebar {
         this.div.className = 'sidebar';
     }
     create() {
-        // Show existing.
-        let existing_div = AddC(this.div, 'div');
-        existing_div.className = 'setting';
-        let existing_label = AddC(existing_div, 'label');
-        existing_label.appendChild(this.only_existing);
-        this.only_existing.type = 'checkbox';
-        this.only_existing.checked = this.only_existing_value;
-        existing_div.onclick = (e) => { this.toggleOnlyExisting(e); };
-        AddT(existing_label, kSideLang.only_existing);
         // Filters.
         this.div.appendChild(this.filter_div);
         this.filter_div.className = 'setting';
@@ -218,6 +214,22 @@ class Sidebar {
         this.filter_div.appendChild(this.region_select.create(this.winelist.data, (_) => {
             this.changeRegionFilter();
         }));
+        // Spacer.
+        AddC(this.filter_div, 'hr');
+        // Only existing.
+        let existing_label = AddC(this.filter_div, 'label');
+        existing_label.appendChild(this.show_nonexisting);
+        this.show_nonexisting.type = 'checkbox';
+        this.show_nonexisting.checked = this.nonexisting_value;
+        existing_label.onclick = (e) => { this.toggleOnlyExisting(e); };
+        AddT(existing_label, kSideLang.nonexisting);
+        // Storage location.
+        let storage_label = AddC(this.filter_div, 'label');
+        storage_label.appendChild(this.storage_location);
+        this.storage_location.type = 'checkbox';
+        this.storage_location.checked = this.storage_location_value;
+        storage_label.onclick = (e) => { this.toggleStorageLocation(e); };
+        AddT(storage_label, kSideLang.storage_location);
         // Reason to add.
         let reason_add_div = AddC(this.div, 'div');
         reason_add_div.className = 'setting';
@@ -371,9 +383,16 @@ class Sidebar {
     toggleOnlyExisting(e) {
         if (e.target.tagName == "LABEL")
             return;
-        let only_existing = !this.only_existing_value;
-        this.only_existing.checked = this.only_existing_value = only_existing;
-        this.winelist.setOnlyExisting(only_existing);
+        let nonexisting = !this.nonexisting_value;
+        this.show_nonexisting.checked = this.nonexisting_value = nonexisting;
+        this.winelist.setOnlyExisting(!nonexisting);
+    }
+    toggleStorageLocation(e) {
+        if (e.target.tagName == "LABEL")
+            return;
+        let location = !this.storage_location_value;
+        this.storage_location.checked = this.storage_location_value = location;
+        this.winelist.setShowStorageLocation(location);
     }
     changeGrapeColorFilter() {
         let color = this.grape_color_select.value;
