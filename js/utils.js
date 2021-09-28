@@ -2,6 +2,7 @@
 var GrapeColor;
 (function (GrapeColor) {
     GrapeColor["kRed"] = "red";
+    GrapeColor["kRose"] = "rose";
     GrapeColor["kWhite"] = "white";
     GrapeColor["kUnknown"] = "unknown";
     GrapeColor["kAny"] = "any";
@@ -40,6 +41,7 @@ const kKnownGrapes = {
     "Weißburgunder": GrapeColor.kWhite,
     "Zweigelt": GrapeColor.kRed,
     // Escape hatch: when in doubt, just say "white"/"red" grape.
+    "rosé": GrapeColor.kRose,
     "rot": GrapeColor.kRed,
     "weiß": GrapeColor.kWhite,
 };
@@ -69,10 +71,13 @@ var kGrapeColorMap = new Map();
 for (let grape in kKnownGrapes) {
     kGrapeColorMap.set(grape, kKnownGrapes[grape]);
 }
-function ColorForGrape(name) {
-    if (name === "" || !kGrapeColorMap.has(name))
+const kRosePattern = /(\bros(e\b|é(?=[\s)"',.?!\-])|é$)|\bweißherbst\b)/iu;
+function ColorForGrape(grape, wine_name) {
+    if (kRosePattern.test(wine_name))
+        return GrapeColor.kRose;
+    if (grape === "" || !kGrapeColorMap.has(grape))
         return GrapeColor.kUnknown;
-    return kGrapeColorMap.get(name);
+    return kGrapeColorMap.get(grape);
 }
 var LogReason;
 (function (LogReason) {

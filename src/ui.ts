@@ -342,7 +342,6 @@ class LocationTD extends EditableTD {
   protected readData() { return this.year.data.location; }
   protected configureInput(input: HTMLInputElement) {
     input.setAttribute('list', kLocationListId);
-    input.size = 10;
   }
 
   public hide() {
@@ -778,7 +777,6 @@ class EditTR extends HideableTR {
     this.tr.appendChild(this.comment.td);
     this.location = new LocationInputTD();
     this.tr.appendChild(this.location.td);
-    this.location.hide();
 
     let button_td = AddC(this.tr, kCell);
     let button = AddC(button_td, 'button');
@@ -1057,7 +1055,7 @@ class TableSorter {
     if (year.data.count < 0) return false;
     const grape = year.wine.data.grape;
     if (this.color_filter !== GrapeColor.kAny &&
-        this.color_filter !== ColorForGrape(grape)) {
+        this.color_filter !== ColorForGrape(grape, year.wine.data.name)) {
       return false;
     }
     if (this.grape_filter !== kAny) {
@@ -1270,6 +1268,7 @@ class WinelistUI {
     let tfoot = AddC(this.table, 'tfoot');
     let add_row = new EditTR(this.data, null, null);
     add_row.stock.hide();
+    add_row.location.hide();
     this.edit_stock_tds.push(add_row.stock);
     this.edit_location_tds.push(add_row.location);
     tfoot.appendChild(add_row.tr);
@@ -1339,6 +1338,7 @@ class WinelistUI {
     this.edit_stock_tds.push(edit.stock);
     this.edit_location_tds.push(edit.location);
     if (!this.stock_mode) edit.stock.hide();
+    if (!this.show_location) edit.location.hide();
     return edit;
   }
   private addWineEditRow(vineyard: Vineyard, wine: Wine) {
@@ -1348,6 +1348,7 @@ class WinelistUI {
     this.edit_stock_tds.push(edit.stock);
     this.edit_location_tds.push(edit.location);
     if (!this.stock_mode) edit.stock.hide();
+    if (!this.show_location) edit.location.hide();
     return edit;
   }
 

@@ -16,6 +16,7 @@ var kSideLang = {
     colors_all: "alle Farben",
     color_only_red: "nur rot",
     color_only_white: "nur weiß",
+    color_only_rose: "nur rosé",
     unknown: "unbekannt",
     grapes_all: "alle Trauben",
     countries_all: "alle Länder",
@@ -113,8 +114,13 @@ class GrapeFilter extends DynamicDropdown {
     displayStyle(grape) {
         if (this.color_filter === GrapeColor.kAny)
             return '';
-        if (ColorForGrape(grape) === this.color_filter)
+        let color_for_grape = ColorForGrape(grape, '');
+        if (color_for_grape === this.color_filter)
             return '';
+        if (color_for_grape === GrapeColor.kRed &&
+            this.color_filter === GrapeColor.kRose) {
+            return '';
+        }
         return 'none';
     }
 }
@@ -201,6 +207,9 @@ class Sidebar {
         let color_white = AddC(this.grape_color_select, 'option');
         color_white.value = GrapeColor.kWhite;
         AddT(color_white, kSideLang.color_only_white);
+        let color_rose = AddC(this.grape_color_select, 'option');
+        color_rose.value = GrapeColor.kRose;
+        AddT(color_rose, kSideLang.color_only_rose);
         let color_unknown = AddC(this.grape_color_select, 'option');
         color_unknown.value = GrapeColor.kUnknown;
         AddT(color_unknown, kSideLang.unknown);
