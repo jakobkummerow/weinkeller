@@ -10,11 +10,15 @@ var GrapeColor;
 const kAny = '__any__';
 const kUnknown = '__unknown__';
 const kKnownGrapes = {
+    // Must come before "Riesling" to prevent erroneous substring matches:
+    "Schwarzriesling": GrapeColor.kRed,
+    // Rest of the list is alpha-sorted:
     "Auxerrois": GrapeColor.kWhite,
     "Bacchus": GrapeColor.kWhite,
     "Cabernet Sauvignon": GrapeColor.kRed,
     "Chardonnay": GrapeColor.kWhite,
     "Dornfelder": GrapeColor.kRed,
+    "Frühburgunder": GrapeColor.kRed,
     "Gewürztraminer": GrapeColor.kWhite,
     "Gutedel": GrapeColor.kWhite,
     "Grauburgunder": GrapeColor.kWhite,
@@ -24,13 +28,16 @@ const kKnownGrapes = {
     "Merlot": GrapeColor.kRed,
     "Muskateller": GrapeColor.kWhite,
     "Müller-Thurgau": GrapeColor.kWhite,
+    "Nebbiolo": GrapeColor.kRed,
+    "Portugieser": GrapeColor.kRed,
     "Primitivo": GrapeColor.kRed,
     "Regent": GrapeColor.kRed,
     "Riesling": GrapeColor.kWhite,
     "Rioja": GrapeColor.kRed,
+    "Saint Laurent": GrapeColor.kRed,
+    "Sangiovese": GrapeColor.kRed,
     "Sauvignon Blanc": GrapeColor.kWhite,
     "Scheurebe": GrapeColor.kWhite,
-    "Schwarzriesling": GrapeColor.kRed,
     "Silvaner": GrapeColor.kWhite,
     "Souvignier Gris": GrapeColor.kWhite,
     "Spätburgunder": GrapeColor.kRed,
