@@ -107,6 +107,71 @@ class Update:
     self.manager._conn.commit()
     self.manager._has_update_scope = False
 
+def MakeFakeData():
+  data = {"vineyards": [], "wines": [], "years": [], "log": []}
+  def V(name, country, region):
+    local_id = len(data["vineyards"]) + 1
+    data["vineyards"].append({
+      "name": name,
+      "country": country,
+      "region": region,
+      "address": "",
+      "website": "",
+      "comment": "",
+      "server_id": 0,
+      "local_id": local_id,
+    })
+    return local_id
+  def W(vineyard, name, grape):
+    local_id = len(data["wines"]) + 1
+    data["wines"].append({
+      "vineyard_id": vineyard,
+      "name": name,
+      "grape": grape,
+      "comment": "",
+      "server_id": 0,
+      "local_id": local_id,
+    })
+    return local_id
+  def Y(wine_id, year, count, price, rating, value, sweetness):
+    local_id = len(data["years"]) + 1
+    data["years"].append({
+      "wine_id": wine_id,
+      "year": year,
+      "count": count,
+      "stock": 0,
+      "price": price,
+      "rating": rating,
+      "value": value,
+      "sweetness": sweetness,
+      "age": 0,
+      "comment": "",
+      "location": "",
+      "server_id": 0,
+      "local_id": local_id,
+    })
+    return local_id
+
+  beurer = V("Beurer", "Deutschland", "Württemberg")
+  maennle = V("Männle", "Deutschland", "Baden")
+
+  gipskeuper = W(beurer, "Gipskeuper", "Riesling")
+  schilf = W(beurer, "Schilfsandstein", "")
+  lemberger = W(beurer, "Lemberger", "Lemberger")
+  spaetb = W(maennle, "Spätburgunder", "Spätburgunder")
+  scheu = W(maennle, "Scheurebe", "Scheurebe")
+
+  Y(gipskeuper, 2012, 1, 8.90, 3, 3, 2)
+  Y(gipskeuper, 2013, 2, 9.90, 3, 3, 2)
+  Y(schilf, 2012, 1, 10.90, 4, 3, 2)
+  Y(lemberger, 2012, 0, 8.90, 2, 3, 2)
+  Y(lemberger, 2009, 0, 7.90, 2, 3, 2)
+  Y(spaetb, 2016, 2, 12.50, 4, 5, 3)
+  Y(spaetb, 2017, 2, 12.50, 3, 3, 3)
+  Y(scheu, 2017, 1, 12.50, 3, 3, 5)
+
+  return data
+
 class Manager:
   def __init__(self, filename):
     conn = sqlite3.connect(filename)
@@ -120,17 +185,8 @@ class Manager:
     # TODO: vacuum?
     # TODO: temporary implementation:
     if filename == ":memory:":
-      # (vineyard, wine, year, count, rating, price, comment, reason)
-      self.AddAll("Beurer", "Gipskeuper", 2012, 1, 3, 8.90, "süß", 2)
-      self.AddAll("Beurer", "Gipskeuper", 2013, 1, 3, 9.90, "", 2)
-      self.AddAll("Beurer", "Schilfsandstein", 2012, 1, 4, 10.90, "", 2)
-      self.AddAll("Beurer", "Lemberger", 2012, 0, 3, 8.90, "ausgetrunken", 2)
-      self.AddAll("Beurer", "Lemberger", 2009, 0, 4, 7.90, "", 2)
-      self.AddAll("Zipf", "Inka", 2012, 1, 3, 14.90, "", 2)
-      self.AddAll("Zipf", "Riesling **", 2013, 2, 2, 7.50, "", 2)
-      self._conn.execute("UPDATE log SET date='2019-12-31'")
-      self._conn.execute("UPDATE log SET date='2019-12-30' WHERE id=2")
-      self._conn.execute("UPDATE log SET date='2020-01-01' WHERE id=3")
+      print("Populating in-memory database with fake data...")
+      self.Set(MakeFakeData())
 
     print("self._lastchange is now: %d" % self._lastchange)
     print("and computed from database: %d" % self.GetLastChange())
@@ -157,7 +213,7 @@ class Manager:
       if existing != 5:
         print("Creating database tables...")
         # Creating tables at the latest version.
-        c.execute("PRAGMA user_version = 3")
+        c.execute("PRAGMA user_version = 5")
         c.execute(CREATE_VINEYARDS)
         c.execute(CREATE_WINES)
         c.execute(CREATE_YEARS)

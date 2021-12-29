@@ -295,6 +295,9 @@ class Wine extends DataWrapper {
             return false;
         return maybe_year.data.count >= 0; // Negative means "deleted".
     }
+    getYear(y) {
+        return this.years_by_year.get(y);
+    }
     getDeletedYear(y) {
         let maybe_year = this.years_by_year.get(y);
         if (maybe_year && maybe_year.data.count < 0)
@@ -351,11 +354,11 @@ class Year extends DataWrapper {
             g_watchpoints.totals.notifyDelta(price_delta, count_delta);
         }
     }
-    clickPlus() {
-        this.data.count++;
+    clickPlus(count = 1) {
+        this.data.count += count;
         this.changed();
-        g_watchpoints.totals.notifyDelta(this.data.price, 1);
-        this.store.recordLog(this, 1);
+        g_watchpoints.totals.notifyDelta(this.data.price, count);
+        this.store.recordLog(this, count);
     }
     clickMinus() {
         if (this.data.count > 0) {
@@ -370,8 +373,8 @@ class Year extends DataWrapper {
         this.changed();
         g_watchpoints.deletions.notifyObservers();
     }
-    clickStockPlus() {
-        this.data.stock++;
+    clickStockPlus(count = 1) {
+        this.data.stock += count;
         this.changed();
     }
     clickStockMinus() {

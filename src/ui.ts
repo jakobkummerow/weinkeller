@@ -829,10 +829,25 @@ class EditTR extends HideableTR {
     // vineyard and wine existed already, so we effectively haven't committed
     // anything yet in that case.
     if (wine.hasYear(year)) {
-      alert(kLang.year_exists);
-      return;
+      // If the year exists with zero bottles, assume that it is being edited.
+      let y = wine.getYear(year) as Year;
+      if (y.data.count === 0) {
+        if (y.data.price) price = y.data.price;
+        if (y.data.comment) comment = y.data.comment;
+        if (y.data.location) location = y.data.location;
+        y.editPriceCommentLocation(price, comment, location);
+        if (this.data.ui && this.data.ui.isStockMode()) {
+          y.clickStockPlus(count);
+        } else {
+          y.clickPlus(count);
+        }
+      } else {
+        alert(kLang.year_exists);
+        return;
+      }
+    } else {
+      this.data.getOrCreateYear(wine, year, count, price, comment, location);
     }
-    this.data.getOrCreateYear(wine, year, count, price, comment, location);
 
     // Clear.
     if (this.vineyard_td) this.vineyard_td.clear();

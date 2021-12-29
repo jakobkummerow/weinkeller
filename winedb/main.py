@@ -40,8 +40,10 @@ class Main():
     self.server.Shutdown()
 
   def Run(self, argv):
-    db_file = os.path.join(self.basedir, self.confDatabaseFilename())
-    #db_file = ":memory:"
+    if self.confDatabaseFilename() == ":memory:":
+      db_file = self.confDatabaseFilename()
+    else:
+      db_file = os.path.join(self.basedir, self.confDatabaseFilename())
     self.server = WineServer(self.confPort(), db_file, self.basedir)
     self.server.Start()
     gui = '--headless' not in argv
