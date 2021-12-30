@@ -74,7 +74,7 @@ class WineData extends DataObject {
     }
 }
 class YearData extends DataObject {
-    constructor(server_id, dirty, wine_id, year, count, stock, price, rating, value, sweetness, age, comment, location) {
+    constructor(server_id, dirty, wine_id, year, count, stock, price, rating, value, sweetness, age, age_update, comment, location) {
         super(server_id, dirty);
         this.wine_id = wine_id;
         this.year = year;
@@ -85,19 +85,21 @@ class YearData extends DataObject {
         this.value = value;
         this.sweetness = sweetness;
         this.age = age;
+        this.age_update = age_update;
         this.comment = comment;
         this.location = location;
     }
     static fromStruct(y) {
         // Fields that were added later need special handling to fill in defaults.
         let location = y.location === undefined ? "" : y.location;
-        return new YearData(y.server_id, y.dirty, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.comment, location);
+        let age_update = y.age_update === undefined ? 0 : y.age_update;
+        return new YearData(y.server_id, y.dirty, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, age_update, y.comment, location);
     }
     maybeUpdate(new_data) {
         this.assertSame(new_data, ['server_id', 'wine_id', 'year']);
         return this.applyUpdates(new_data, [
             'count', 'stock', 'price', 'rating', 'value', 'sweetness', 'age',
-            'comment', 'location'
+            'age_update', 'comment', 'location'
         ]);
     }
 }
@@ -443,6 +445,7 @@ class Year extends DataWrapper {
         if (this.data.age === new_age)
             return;
         this.data.age = new_age;
+        this.data.age_update = Math.round(Date.now() / 1000);
         this.changed();
     }
     reviveDeleted(new_count, new_stock, new_price, new_comment, new_location) {
@@ -659,7 +662,7 @@ class DataStore {
                 this.ui.reviveYear(maybe_deleted);
             return;
         }
-        let data = new YearData(0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, comment, location);
+        let data = new YearData(0, 1, wine.local_id, year, count, stock, price, 0, 0, 0, 0, 0, comment, location);
         let y = this.createYear(data);
         if (!stock_mode)
             this.recordLog(y, count);

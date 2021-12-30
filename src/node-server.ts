@@ -29,7 +29,8 @@ class Year {
       public server_id: number, public wine_id: number, public year: number,
       public count: number, public stock: number, public price: number,
       public rating: number, public value: number, public sweetness: number,
-      public age: number, public comment: string, public location: string) {}
+      public age: number, public age_update: number, public comment: string,
+      public location: string) {}
 }
 
 class Log {
@@ -98,10 +99,12 @@ class Data {
     if (data.years) {
       for (let y of data.years) {
         let id = y.id;
+        // Fields that were added later need special handling to set defaults.
         let location = y.location === undefined ? "" : y.location;
+        let age_update = y.age_update === undefined ? 0 : y.age_update;
         let year = new Year(
             id, y.wine, y.year, y.count, y.stock, y.price, y.rating, y.value,
-            y.sweetness, y.age, y.comment, location);
+            y.sweetness, y.age, age_update, y.comment, location);
         this.years[id] = year;
         this.year_lastchange[id] = y.lastchange;
       }
@@ -164,6 +167,7 @@ class Data {
           value: y.value,
           sweetness: y.sweetness,
           age: y.age,
+          age_update: y.age_update,
           comment: y.comment,
           location: y.location,
           lastchange: this.year_lastchange[i]
@@ -306,7 +310,7 @@ class Data {
     let server_id = this.years.length;
     let year = new Year(
         server_id, y.wine_id, y.year, y.count, y.stock, y.price, y.rating,
-        y.value, y.sweetness, y.age, y.comment, y.location);
+        y.value, y.sweetness, y.age, y.age_update, y.comment, y.location);
     this.years.push(year);
     this.year_lastchange.push(this.lastchange);
     return server_id;
@@ -353,6 +357,7 @@ class Data {
     year.value = y.value;
     year.sweetness = y.sweetness;
     year.age = y.age;
+    year.age_update = y.age_update;
     year.comment = y.comment;
     year.location = y.location;
     this.year_lastchange[year.server_id] = this.lastchange;

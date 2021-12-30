@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS wines (
 )"""
 
 # stock: temporary count during stock-taking mode.
+# age_update: unix timestamp of last update to 'age'.
 CREATE_YEARS = """
 CREATE TABLE IF NOT EXISTS years (
   id INTEGER PRIMARY KEY,
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS years (
   value REAL DEFAULT 0,
   sweetness REAL DEFAULT 0,
   age INTEGER DEFAULT 0,
+  age_update INTEGER DEFAULT 0,
   comment TEXT DEFAULT "",
   location TEXT DEFAULT "",
   lastchange INTEGER
@@ -133,7 +135,7 @@ def MakeFakeData():
       "local_id": local_id,
     })
     return local_id
-  def Y(wine_id, year, count, price, rating, value, sweetness):
+  def Y(wine_id, year, count, price, rating, value, sweetness, comment):
     local_id = len(data["years"]) + 1
     data["years"].append({
       "wine_id": wine_id,
@@ -145,7 +147,8 @@ def MakeFakeData():
       "value": value,
       "sweetness": sweetness,
       "age": 0,
-      "comment": "",
+      "age_update": 0,
+      "comment": comment,
       "location": "",
       "server_id": 0,
       "local_id": local_id,
@@ -161,14 +164,14 @@ def MakeFakeData():
   spaetb = W(maennle, "Spätburgunder", "Spätburgunder")
   scheu = W(maennle, "Scheurebe", "Scheurebe")
 
-  Y(gipskeuper, 2012, 1, 8.90, 3, 3, 2)
-  Y(gipskeuper, 2013, 2, 9.90, 3, 3, 2)
-  Y(schilf, 2012, 1, 10.90, 4, 3, 2)
-  Y(lemberger, 2012, 0, 8.90, 2, 3, 2)
-  Y(lemberger, 2009, 0, 7.90, 2, 3, 2)
-  Y(spaetb, 2016, 2, 12.50, 4, 5, 3)
-  Y(spaetb, 2017, 2, 12.50, 3, 3, 3)
-  Y(scheu, 2017, 1, 12.50, 3, 3, 5)
+  Y(gipskeuper, 2012, 1, 8.90, 3, 3, 2, "")
+  Y(gipskeuper, 2013, 2, 9.90, 3, 3, 2, "")
+  Y(schilf, 2012, 1, 10.90, 4, 3, 2, "der bessere Hauswein")
+  Y(lemberger, 2012, 0, 8.90, 2, 3, 2, "")
+  Y(lemberger, 2009, 0, 7.90, 2, 3, 2, "")
+  Y(spaetb, 2016, 2, 12.50, 4, 5, 3, "super Jahrgang")
+  Y(spaetb, 2017, 2, 12.50, 3, 3, 3, "nicht mehr so herausragend")
+  Y(scheu, 2017, 1, 12.50, 3, 3, 5, "")
 
   return data
 
@@ -213,14 +216,14 @@ class Manager:
       if existing != 5:
         print("Creating database tables...")
         # Creating tables at the latest version.
-        c.execute("PRAGMA user_version = 5")
+        c.execute("PRAGMA user_version = 6")
         c.execute(CREATE_VINEYARDS)
         c.execute(CREATE_WINES)
         c.execute(CREATE_YEARS)
         c.execute(CREATE_LOG)
         c.execute(CREATE_DATA)
         self._conn.commit()
-        version = 5
+        version = 6
       else:
         print("Updating database version 0->1...")
         self._BackupDatabase(filename, version)
@@ -261,6 +264,16 @@ class Manager:
       self._conn.execute("PRAGMA user_version = 5")
       self._conn.commit()
       version = 5
+    if version < 6:
+      print("Updating database version 5->6...")
+      self._BackupDatabase(filename, version)
+      self._conn.execute(
+          "ALTER TABLE years ADD COLUMN age_update INTEGER DEFAULT 0")
+      self._conn.execute("PRAGMA user_version = 6")
+      self._conn.commit()
+      version = 6
+    # When adding new database versions, don't forget to update the table
+    # creation code at the top of this function!
 
   def _GetLastChange(self, table):
     c = self._conn.execute("SELECT MAX(lastchange) FROM %s" % table)
@@ -337,6 +350,7 @@ class Manager:
           "value": row["value"],
           "sweetness": row["sweetness"],
           "age": row["age"],
+          "age_update": row["age_update"],
           "comment": row["comment"],
           "location": row["location"]
       })
@@ -465,21 +479,22 @@ class Manager:
         print("INSERT year: %s" % y)
         c = self.Execute("""
             INSERT INTO years(wine, year, count, stock, price, rating, value,
-                              sweetness, age, comment, location, lastchange)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              sweetness, age, age_update, comment, location,
+                              lastchange)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (y["wine_id"], y["year"], y["count"], y["stock"], y["price"],
-             y["rating"], y["value"], y["sweetness"], y["age"], y["comment"],
-             y["location"], self._lastchange))
+             y["rating"], y["value"], y["sweetness"], y["age"], y["age_update"],
+             y["comment"], y["location"], self._lastchange))
         return c.lastrowid
       server_id = r["id"]
     print("UPDATE year: %s" % y)
     self.Execute("""
         UPDATE years
         SET count=?, stock=?, price=?, rating=?, value=?, sweetness=?, age=?,
-            comment=?, location=?, lastchange=?
+            age_update=?, comment=?, location=?, lastchange=?
         WHERE id=?""",
         (y["count"], y["stock"], y["price"], y["rating"], y["value"],
-         y["sweetness"], y["age"], y["comment"], y["location"],
+         y["sweetness"], y["age"], y["age_update"], y["comment"], y["location"],
          self._lastchange, server_id))
     return server_id
 
@@ -951,6 +966,11 @@ class Manager:
     return ["unbekannt", "zu jung", "wird noch besser", "genau richtig",
             "muss weg", "zu alt"][age]
 
+  def _FormatDate(self, timestamp):
+    if timestamp == 0: return ""
+    d = datetime.date.fromtimestamp(timestamp)
+    return d.isoformat()
+
   def ExportCSV(self):
     c = self.Execute("""
       SELECT years.year as year, years.count as count,
@@ -965,12 +985,14 @@ class Manager:
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Weingut", "Wein", "Jahr", "Anzahl", "Preis", "Kommentar",
-                     "Bewertung", "Preis/Leist", "Süße", "Alter", "Lagerort"])
+                     "Bewertung", "Preis/Leist", "Süße", "Alter", "(update)",
+                     "Lagerort"])
     for r in c:
       row = [r["vineyard_name"], r["wine_name"], r["year"], r["count"],
              r["price"], r["comment"], self._FormatRating(r["rating"]),
              self._FormatRating(r["value"]), self._FormatRating(r["sweetness"]),
-             self._FormatAge(r["age"]), r["location"]]
+             self._FormatAge(r["age"]), self._FormatDate(r["age_update"]),
+             r["location"]]
       writer.writerow(row)
     return output.getvalue()
 

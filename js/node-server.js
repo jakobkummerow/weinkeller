@@ -28,7 +28,7 @@ class Wine {
     }
 }
 class Year {
-    constructor(server_id, wine_id, year, count, stock, price, rating, value, sweetness, age, comment, location) {
+    constructor(server_id, wine_id, year, count, stock, price, rating, value, sweetness, age, age_update, comment, location) {
         this.server_id = server_id;
         this.wine_id = wine_id;
         this.year = year;
@@ -39,6 +39,7 @@ class Year {
         this.value = value;
         this.sweetness = sweetness;
         this.age = age;
+        this.age_update = age_update;
         this.comment = comment;
         this.location = location;
     }
@@ -115,8 +116,10 @@ class Data {
         if (data.years) {
             for (let y of data.years) {
                 let id = y.id;
+                // Fields that were added later need special handling to set defaults.
                 let location = y.location === undefined ? "" : y.location;
-                let year = new Year(id, y.wine, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.comment, location);
+                let age_update = y.age_update === undefined ? 0 : y.age_update;
+                let year = new Year(id, y.wine, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, age_update, y.comment, location);
                 this.years[id] = year;
                 this.year_lastchange[id] = y.lastchange;
             }
@@ -181,6 +184,7 @@ class Data {
                     value: y.value,
                     sweetness: y.sweetness,
                     age: y.age,
+                    age_update: y.age_update,
                     comment: y.comment,
                     location: y.location,
                     lastchange: this.year_lastchange[i]
@@ -326,7 +330,7 @@ class Data {
             return this.updateYear(maybe_year, y);
         console.log('inserting year: ' + JSON.stringify(y));
         let server_id = this.years.length;
-        let year = new Year(server_id, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.comment, y.location);
+        let year = new Year(server_id, y.wine_id, y.year, y.count, y.stock, y.price, y.rating, y.value, y.sweetness, y.age, y.age_update, y.comment, y.location);
         this.years.push(year);
         this.year_lastchange.push(this.lastchange);
         return server_id;
@@ -372,6 +376,7 @@ class Data {
         year.value = y.value;
         year.sweetness = y.sweetness;
         year.age = y.age;
+        year.age_update = y.age_update;
         year.comment = y.comment;
         year.location = y.location;
         this.year_lastchange[year.server_id] = this.lastchange;

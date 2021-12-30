@@ -462,9 +462,13 @@ class AgeTD {
     }
     return this.td;
   }
-  update(value: number) {
+  update(value: number, update: number) {
     SetText(this.td, FormatAge(value));
     this.select.options[value].selected = true;
+    if (update !== 0) {
+      let d = new Date(update * 1000);
+      this.td.title = d.toLocaleDateString();
+    }
   }
   clicked() {
     let value = this.select.value;
@@ -548,7 +552,7 @@ class YearTR extends HideableTR {
     this.rating.update(data.rating);
     this.value.update(data.value);
     this.sweetness.update(data.sweetness);
-    this.age.update(data.age);
+    this.age.update(data.age, data.age_update);
     if (this.editing) return;  // Don't interfere with the user.
     this.price.update();
     this.comment.update();
