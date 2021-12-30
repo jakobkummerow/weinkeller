@@ -52,3 +52,88 @@ button.minus {
   border-top: 2px solid #ffb3b8;
   border-left: 2px solid #ffb3b8;
 }
+
+/* Popup boxes. TODO: share with desktop version? */
+.edit_background {
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: 10000;
+}
+.edit_container {
+  background-color: #4c9de9;
+  border: 2px solid #254d73;
+  border-radius: 8px;
+  box-shadow: 10px 10px 60px #555;
+  cursor: default;
+  display: inline-block;
+  height: auto;
+  max-width: 80%;
+  padding: 2%;
+  position: relative;
+  vertical-align: middle;
+}
+.edit_helper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+table.edit_table > tr > td {
+  font-size: 3rem;
+  padding: 4px;
+  vertical-align: top;
+}
+table.edit_table > tr > td > button {
+  font-size: 10pt;
+  margin: 15px 3px;
+  padding: 5px 15px;
+}
+table.edit_table > tr > td > input.edit {
+  margin-top: -5px;
+}
+table.edit_table {
+  background: white;
+  border: 2px solid #336a9e;
+  border-radius: 6px;
+  display: inline-block;
+  padding: 10px;
+}
+td.label {
+  text-align: right;
+  vertical-align: top;
+  width: 50%;
+}
+
+/* Five-star ratings. TODO: share with desktop version? */
+fieldset.rating {
+  border: none;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+fieldset.rating > input {
+  display: none;
+}
+fieldset.rating > span {
+  color: #f0f0f0;
+  cursor: default;
+  float: right;
+  margin: -2px;
+}
+
+fieldset.rating:not(:hover) > input:checked ~ span {
+  color: #FFD700;
+}
+fieldset.rating:not(:hover) > input.fivestar:checked ~ span {
+  text-shadow: 0px 0px 3px #FFED85;
+}
+fieldset.rating:not(:checked) > span:hover,
+fieldset.rating:not(:checked) > span:hover ~ span {
+  color: #FFED85;
+}

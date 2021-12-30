@@ -1,10 +1,121 @@
 "use strict";
 let g_mdata;
 let g_mconnection;
+let g_mpopup;
+const kMobileLang = {
+    rating: 'Bewertung',
+    value: 'Preis/Leist',
+    sweetness: 'Süße',
+    comment: 'Kommentar',
+};
 // TODO: update for deleted and revived years,
 //       g_watchpoints.deletions.registerObserver(...);
 // TODO: show connection status?
-// TODO: edit popup box?
+// TODO: make popup box contents editable?
+class PopupRow {
+    constructor(label) {
+        this.tr = document.createElement('tr');
+        this.td = document.createElement('td');
+        let label_td = AddC(this.tr, 'td');
+        label_td.className = 'label';
+        if (label !== '')
+            AddT(label_td, label + ':');
+        this.tr.appendChild(this.td);
+    }
+    update(value) {
+        SetText(this.td, value);
+    }
+}
+class PopupRatingRow extends PopupRow {
+    constructor(label, radio_basename) {
+        super(label);
+        this.inputs = [];
+        this.count = 5;
+        let fieldset = AddC(this.td, 'fieldset');
+        fieldset.className = 'rating';
+        for (let i = 0; i < this.count; i++) {
+            let value = this.count - i;
+            let input = AddC(fieldset, 'input');
+            input.type = 'radio';
+            input.name = radio_basename;
+            input.value = value.toString();
+            if (i === 0)
+                input.className = 'fivestar';
+            this.inputs.push(input);
+            let star = AddC(fieldset, 'span');
+            AddT(star, '★');
+        }
+    }
+    updateRating(value) {
+        if (value === 0)
+            return; // "0" means "not set".
+        this.inputs[(this.count - value)].checked = true;
+    }
+}
+class Popup {
+    constructor(data) {
+        this.data = data;
+        this.created = false;
+        this.background = document.createElement('div');
+        this.title = document.createElement('h3');
+        this.rating = new PopupRatingRow(kMobileLang.rating, 'popup_rating');
+        this.value = new PopupRatingRow(kMobileLang.value, 'popup_value');
+        this.sweetness = new PopupRatingRow(kMobileLang.sweetness, 'popup_sweetness');
+        this.comment = new PopupRow(kMobileLang.comment);
+    }
+    create() {
+        this.background.className = 'edit_background';
+        this.background.onclick = (event) => this.hide(event);
+        let aligner = AddC(this.background, 'span');
+        aligner.className = 'edit_helper';
+        let container = AddC(this.background, 'div');
+        container.className = 'edit_container';
+        container.onclick = (event) => event.stopPropagation();
+        container.appendChild(this.title);
+        let table = AddC(container, 'table');
+        table.className = 'edit_table';
+        table.appendChild(this.rating.tr);
+        table.appendChild(this.value.tr);
+        table.appendChild(this.sweetness.tr);
+        table.appendChild(this.comment.tr);
+        let padding = AddC(container, 'div');
+        AddT(padding, '\xa0');
+        document.body.appendChild(this.background);
+        this.created = true;
+    }
+    show(year) {
+        if (!this.created)
+            this.create();
+        this.background.style.display = 'block';
+        this.year = year;
+        year.registerObserver(this);
+        this.update();
+    }
+    hide(event) {
+        if (this.year === null) {
+            throw "year cannot be null";
+        }
+        event.stopPropagation();
+        this.background.style.display = 'none';
+        this.year.unregisterObserver(this);
+        this.year = null;
+    }
+    update() {
+        if (this.year === null) {
+            throw "year cannot be null";
+        }
+        let year = this.year;
+        let wine = year.wine;
+        let wine_name = wine.data.name;
+        let vineyard = wine.vineyard;
+        let vineyard_name = vineyard.data.name;
+        SetText(this.title, `${vineyard_name} ${wine_name} ${year.data.year}`);
+        this.rating.updateRating(year.data.rating);
+        this.value.updateRating(year.data.value);
+        this.sweetness.updateRating(year.data.sweetness);
+        this.comment.update(year.data.comment);
+    }
+}
 class VineyardDiv {
     constructor(vineyard) {
         this.vineyard = vineyard;
@@ -165,10 +276,16 @@ class YearSpan {
         year.registerObserver(this);
         this.span.className = 'year';
         this.plus_button.className = 'plus';
-        this.plus_button.onclick = (_) => { this.year.clickPlus(); };
+        this.plus_button.onclick = (event) => {
+            event.stopPropagation();
+            this.year.clickPlus();
+        };
         AddT(this.plus_button, '+');
         this.minus_button.className = 'minus';
-        this.minus_button.onclick = (_) => { this.year.clickMinus(); };
+        this.minus_button.onclick = (event) => {
+            event.stopPropagation();
+            this.year.clickMinus();
+        };
         AddT(this.minus_button, '−');
         let count_span = AddC(this.span, 'span');
         count_span.appendChild(this.count);
@@ -178,6 +295,7 @@ class YearSpan {
         this.span.appendChild(count_span);
         this.span.appendChild(this.price);
         this.update();
+        this.span.onclick = (_) => { g_mpopup.show(year); };
     }
     create() { return this.span; }
     update() {
@@ -257,6 +375,7 @@ function winelist_mobile_main() {
     g_mdata = new DataStore();
     g_mconnection = new Connection(g_mdata);
     let ui = new WinelistMobileUI(g_mdata);
+    g_mpopup = new Popup(g_mdata);
     g_mdata.initializeFromDatabase().then(() => {
         ui.create();
         g_mconnection.start();

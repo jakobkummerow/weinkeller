@@ -2,11 +2,130 @@
 
 let g_mdata: DataStore;
 let g_mconnection: Connection;
+let g_mpopup: Popup;
+
+const kMobileLang = {
+  rating: 'Bewertung',
+  value: 'Preis/Leist',
+  sweetness: 'Süße',
+  comment: 'Kommentar',
+}
 
 // TODO: update for deleted and revived years,
 //       g_watchpoints.deletions.registerObserver(...);
 // TODO: show connection status?
-// TODO: edit popup box?
+// TODO: make popup box contents editable?
+
+class PopupRow {
+  public tr = document.createElement('tr');
+  protected td = document.createElement('td');
+
+  constructor(label: string) {
+    let label_td = AddC(this.tr, 'td');
+    label_td.className = 'label';
+    if (label !== '') AddT(label_td, label + ':');
+    this.tr.appendChild(this.td);
+  }
+
+  public update(value: string) {
+    SetText(this.td, value);
+  }
+}
+
+class PopupRatingRow extends PopupRow {
+  private inputs: HTMLInputElement[] = [];
+  private count = 5;
+
+  constructor(label: string, radio_basename: string) {
+    super(label);
+    let fieldset = AddC(this.td, 'fieldset');
+    fieldset.className = 'rating';
+    for (let i = 0; i < this.count; i++) {
+      let value = this.count - i;
+      let input = AddC(fieldset, 'input');
+      input.type = 'radio';
+      input.name = radio_basename;
+      input.value = value.toString();
+      if (i === 0) input.className = 'fivestar';
+      this.inputs.push(input);
+      let star = AddC(fieldset, 'span');
+      AddT(star, '★');
+    }
+  }
+  public updateRating(value: number) {
+    if (value === 0) return;  // "0" means "not set".
+    this.inputs[(this.count - value)].checked = true;
+  }
+}
+
+class Popup {
+  created = false;
+  background = document.createElement('div');
+  title = document.createElement('h3');
+  year: Year | null;
+  rating = new PopupRatingRow(kMobileLang.rating, 'popup_rating');
+  value = new PopupRatingRow(kMobileLang.value, 'popup_value');
+  sweetness = new PopupRatingRow(kMobileLang.sweetness, 'popup_sweetness');
+  comment = new PopupRow(kMobileLang.comment);
+
+  constructor(public data: DataStore) {}
+
+  private create() {
+    this.background.className = 'edit_background';
+    this.background.onclick = (event) => this.hide(event);
+
+    let aligner = AddC(this.background, 'span');
+    aligner.className = 'edit_helper';
+
+    let container = AddC(this.background, 'div');
+    container.className = 'edit_container';
+    container.onclick = (event) => event.stopPropagation();
+    container.appendChild(this.title);
+
+    let table = AddC(container, 'table');
+    table.className = 'edit_table';
+    table.appendChild(this.rating.tr);
+    table.appendChild(this.value.tr);
+    table.appendChild(this.sweetness.tr);
+    table.appendChild(this.comment.tr);
+
+    let padding = AddC(container, 'div');
+    AddT(padding, '\xa0');
+
+    document.body.appendChild(this.background);
+    this.created = true;
+  }
+
+  public show(year: Year) {
+    if (!this.created) this.create();
+    this.background.style.display = 'block';
+    this.year = year;
+    year.registerObserver(this);
+    this.update();
+  }
+
+  public hide(event: Event) {
+    if (this.year === null) { throw "year cannot be null"; }
+    event.stopPropagation();
+    this.background.style.display = 'none';
+    this.year.unregisterObserver(this);
+    this.year = null;
+  }
+
+  public update() {
+    if (this.year === null) { throw "year cannot be null"; }
+    let year = this.year;
+    let wine = year.wine;
+    let wine_name = wine.data.name;
+    let vineyard = wine.vineyard;
+    let vineyard_name = vineyard.data.name;
+    SetText(this.title, `${vineyard_name} ${wine_name} ${year.data.year}`);
+    this.rating.updateRating(year.data.rating);
+    this.value.updateRating(year.data.value);
+    this.sweetness.updateRating(year.data.sweetness);
+    this.comment.update(year.data.comment);
+  }
+}
 
 class VineyardDiv {
   static kDefaultVisibilitySentinel: string = "__default_visibility";
@@ -158,10 +277,16 @@ class YearSpan {
     year.registerObserver(this);
     this.span.className = 'year';
     this.plus_button.className = 'plus';
-    this.plus_button.onclick = (_) => { this.year.clickPlus(); };
+    this.plus_button.onclick = (event) => {
+      event.stopPropagation();
+      this.year.clickPlus();
+    };
     AddT(this.plus_button, '+');
     this.minus_button.className = 'minus';
-    this.minus_button.onclick = (_) => { this.year.clickMinus(); };
+    this.minus_button.onclick = (event) => {
+      event.stopPropagation();
+      this.year.clickMinus();
+    };
     AddT(this.minus_button, '−');
     let count_span = AddC(this.span, 'span');
     count_span.appendChild(this.count);
@@ -171,6 +296,8 @@ class YearSpan {
     this.span.appendChild(count_span);
     this.span.appendChild(this.price);
     this.update();
+
+    this.span.onclick = (_) => {g_mpopup.show(year)};
   }
 
   create() { return this.span; }
@@ -255,6 +382,7 @@ function winelist_mobile_main() {
   g_mdata = new DataStore();
   g_mconnection = new Connection(g_mdata);
   let ui = new WinelistMobileUI(g_mdata);
+  g_mpopup = new Popup(g_mdata);
   g_mdata.initializeFromDatabase().then(() => {
     ui.create();
     g_mconnection.start();
