@@ -54,6 +54,16 @@ class Log {
         this.comment = comment;
     }
 }
+function MonthlyDatabaseBackup(filename) {
+    let now = new Date();
+    let month = (now.getMonth() + 1).toString();
+    if (month.length == 1)
+        month = '0' + month;
+    let backup_name = `${filename}-${now.getFullYear()}-${month}-backup`;
+    if (fs.existsSync(backup_name))
+        return;
+    fs.copyFileSync(filename, backup_name);
+}
 class Data {
     constructor(save_file_name) {
         this.save_file_name = save_file_name;
@@ -76,6 +86,9 @@ class Data {
                 '" not found, starting without data');
             this.getUuid();
             return true;
+        }
+        else {
+            MonthlyDatabaseBackup(this.save_file_name);
         }
         let file_contents;
         try {

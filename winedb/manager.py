@@ -1,6 +1,7 @@
 import csv
 import datetime
 import io
+import os
 import shutil
 import sqlite3
 import uuid
@@ -157,18 +158,27 @@ def MakeFakeData():
 
   beurer = V("Beurer", "Deutschland", "Württemberg")
   maennle = V("Männle", "Deutschland", "Baden")
+  beurer2 = V("Beurer2", "Deutschland", "Baden")
 
   gipskeuper = W(beurer, "Gipskeuper", "Riesling")
+  gips2 = W(beurer2, "Gipskeuper", "")
   schilf = W(beurer, "Schilfsandstein", "")
+  schilf2 = W(beurer2, "Schilfsandstein", "Riesling")
   lemberger = W(beurer, "Lemberger", "Lemberger")
+  sauvig = W(beurer2, "Sauvignon Blanc", "")
   spaetb = W(maennle, "Spätburgunder", "Spätburgunder")
   scheu = W(maennle, "Scheurebe", "Scheurebe")
 
   Y(gipskeuper, 2012, 1, 8.90, 3, 3, 2, "")
   Y(gipskeuper, 2013, 2, 9.90, 3, 3, 2, "")
+  Y(gips2, 2012, 1, 8.90, 3, 3, 2, "merge it")
+  Y(gips2, 2017, 2, 2, 2, 2, 2, "222222")
   Y(schilf, 2012, 1, 10.90, 4, 3, 2, "der bessere Hauswein")
+  Y(schilf2, 2012, 1, 10.90, 4, 3, 2, "keep because of conflicts")
+  Y(schilf2, 2019, 1, 12, 2, 2, 3, "move it")
   Y(lemberger, 2012, 0, 8.90, 2, 3, 2, "")
   Y(lemberger, 2009, 0, 7.90, 2, 3, 2, "")
+  Y(sauvig, 2018, 2, 20, 4, 3, 3, "move it")
   Y(spaetb, 2016, 2, 12.50, 4, 5, 3, "super Jahrgang")
   Y(spaetb, 2017, 2, 12.50, 3, 3, 3, "nicht mehr so herausragend")
   Y(scheu, 2017, 1, 12.50, 3, 3, 5, "")
@@ -177,6 +187,7 @@ def MakeFakeData():
 
 class Manager:
   def __init__(self, filename):
+    self._MonthlyDatabaseBackup(filename)
     conn = sqlite3.connect(filename)
     self._conn = conn
     conn.row_factory = sqlite3.Row
@@ -199,6 +210,15 @@ class Manager:
     self._conn.commit()
     self._conn.close()
     print("Datenbank erfolgreich gespeichert")
+
+  # Backup strategy: if no backup has been created yet in the current calendar
+  # month, do that now.
+  def _MonthlyDatabaseBackup(self, filename):
+    if filename == ":memory:": return
+    today = datetime.date.today().strftime("%Y-%m")
+    backup_name = "%s-%s-backup" % (filename, today)
+    if os.path.exists(backup_name): return
+    shutil.copyfile(filename, backup_name)
 
   def _BackupDatabase(self, filename, version):
     if filename == ":memory:": return
@@ -976,6 +996,7 @@ class Manager:
       SELECT years.year as year, years.count as count,
              years.price as price, years.rating as rating, years.value as value,
              years.sweetness as sweetness, years.age as age,
+             years.age_update as age_update,
              years.comment as comment, years.location as location,
              wines.name as wine_name, vineyards.name as vineyard_name
       FROM years

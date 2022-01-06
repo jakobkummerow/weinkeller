@@ -9,6 +9,7 @@ var GrapeColor;
 })(GrapeColor || (GrapeColor = {}));
 const kAny = '__any__';
 const kUnknown = '__unknown__';
+const kDeleted = '__deleted__';
 const kKnownGrapes = {
     // Must come before "Riesling" to prevent erroneous substring matches:
     "Schwarzriesling": GrapeColor.kRed,
@@ -97,6 +98,16 @@ var LogReason;
     LogReason[LogReason["kLost"] = 13] = "kLost";
     LogReason[LogReason["kStock"] = 20] = "kStock";
 })(LogReason || (LogReason = {}));
+var MergeResult;
+(function (MergeResult) {
+    MergeResult[MergeResult["kOK"] = 0] = "kOK";
+    MergeResult[MergeResult["kRegionConflict"] = 1] = "kRegionConflict";
+    MergeResult[MergeResult["kCountryConflict"] = 2] = "kCountryConflict";
+    MergeResult[MergeResult["kWebsiteConflict"] = 3] = "kWebsiteConflict";
+    MergeResult[MergeResult["kAddressConflict"] = 4] = "kAddressConflict";
+    MergeResult[MergeResult["kCommentConflict"] = 5] = "kCommentConflict";
+    MergeResult[MergeResult["kGrapeConflict"] = 6] = "kGrapeConflict";
+})(MergeResult || (MergeResult = {}));
 function IsValidReasonFor(reason, delta) {
     if (delta > 0)
         return reason > 0 && reason < 10;

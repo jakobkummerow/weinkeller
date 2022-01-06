@@ -765,14 +765,14 @@ class EditTR extends HideableTR {
         let wine_name = "";
         if (this.vineyard_td) {
             vineyard_name = this.vineyard_td.getStringValue();
-            if (!vineyard_name) {
+            if (!vineyard_name || vineyard_name === kDeleted) {
                 alert(kLang.invalid_vineyard);
                 return;
             }
         }
         if (this.wine_td) {
             wine_name = this.wine_td.getStringValue();
-            if (!wine_name) {
+            if (!wine_name || wine_name === kDeleted) {
                 alert(kLang.invalid_wine);
                 return;
             }

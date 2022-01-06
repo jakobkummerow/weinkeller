@@ -72,6 +72,9 @@ class WineData extends DataObject {
         this.assertSame(new_data, ['server_id', 'vineyard_id']);
         return this.applyUpdates(new_data, ['name', 'grape', 'comment']);
     }
+    copyForVineyard(vineyard_id) {
+        return new WineData(0, 1, vineyard_id, this.name, this.grape, this.comment);
+    }
 }
 class YearData extends DataObject {
     constructor(server_id, dirty, wine_id, year, count, stock, price, rating, value, sweetness, age, age_update, comment, location) {
@@ -101,6 +104,9 @@ class YearData extends DataObject {
             'count', 'stock', 'price', 'rating', 'value', 'sweetness', 'age',
             'age_update', 'comment', 'location'
         ]);
+    }
+    CopyForWine(wine_id) {
+        return new YearData(0, 1, wine_id, this.year, this.count, this.stock, this.price, this.rating, this.value, this.sweetness, this.age, this.age_update, this.comment, this.location);
     }
 }
 class LogData extends DataObject {
@@ -226,21 +232,40 @@ class Vineyard extends DataWrapper {
         this.wines_by_name.set(w.data.name, w);
         w.vineyard = this;
     }
+    deleteWine(w) {
+        this.wines_by_name.delete(w.data.name);
+        w.data.name = kDeleted;
+        w.changed();
+    }
+    getWineIfExists(name) {
+        return this.wines_by_name.get(name);
+    }
     getWineNames() {
         let result = [];
-        for (let w of this.wines)
+        for (let w of this.wines) {
+            if (w.data.name === kDeleted)
+                continue;
             result.push(w.data.name);
+        }
         return result.sort();
     }
     iterateWines(callback) {
-        for (let w of this.wines)
+        for (let w of this.wines) {
+            if (w.data.name === kDeleted)
+                continue;
             callback(w);
+        }
     }
     iterateYears(callback) {
-        for (let w of this.wines)
+        for (let w of this.wines) {
+            if (w.data.name === kDeleted)
+                continue;
             w.iterateYears(callback);
+        }
     }
     saveEdits(new_name, new_country, new_region, new_website, new_address, new_comment) {
+        if (new_name === kDeleted)
+            new_name = this.data.name;
         let changed = false;
         let country_changed = false;
         let region_changed = false;
@@ -279,6 +304,86 @@ class Vineyard extends DataWrapper {
             g_watchpoints.vineyard_regions.notifyObservers();
         if (changed)
             this.changed();
+    }
+    merge(other, store) {
+        // Merge per-vineyard data.
+        let changed = false;
+        let region = this.data.region;
+        let country = this.data.country;
+        let website = this.data.website;
+        let address = this.data.address;
+        let comment = this.data.comment;
+        if (region === '' && other.data.region !== '') {
+            region = other.data.region;
+            changed = true;
+        }
+        else if (other.data.region !== '' && other.data.region !== region) {
+            return MergeResult.kRegionConflict;
+        }
+        if (country === '' && other.data.country !== '') {
+            country = other.data.country;
+            changed = true;
+        }
+        else if (other.data.country !== '' && other.data.country !== country) {
+            return MergeResult.kCountryConflict;
+        }
+        if (website === '' && other.data.website !== '') {
+            website = other.data.website;
+            changed = true;
+        }
+        else if (other.data.website !== '' && other.data.website !== website) {
+            return MergeResult.kWebsiteConflict;
+        }
+        if (address === '' && other.data.address !== '') {
+            address = other.data.address;
+            changed = true;
+        }
+        else if (other.data.address !== '' && other.data.address !== address) {
+            return MergeResult.kAddressConflict;
+        }
+        if (comment === '' && other.data.comment !== '') {
+            comment = other.data.comment;
+            changed = true;
+        }
+        else if (other.data.comment !== '' && other.data.comment !== comment) {
+            return MergeResult.kCommentConflict;
+        }
+        // Commit.
+        this.data.region = region;
+        this.data.country = country;
+        this.data.website = website;
+        this.data.address = address;
+        this.data.comment = comment;
+        if (changed)
+            this.changed();
+        // Merge wines.
+        let years_left = false;
+        for (let w of other.wines) {
+            let own = this.wines_by_name.get(w.data.name);
+            if (own) {
+                own.merge(w, store);
+                for (let y of w.years) {
+                    if (y.data.count >= 0) {
+                        years_left = true;
+                        break;
+                    }
+                }
+            }
+            else {
+                let new_wine = store.createWine(w.data.copyForVineyard(this.local_id));
+                w.iterateYears((y) => {
+                    store.createYear(y.data.CopyForWine(new_wine.local_id));
+                    y.clickDelete();
+                });
+            }
+        }
+        // Mark as deleted.
+        if (years_left === false) {
+            this.store.vineyards_by_name.delete(other.data.name);
+            other.data.name = kDeleted;
+            other.changed();
+        }
+        return MergeResult.kOK;
     }
     applyStock() { for (let w of this.wines)
         w.applyStock(); }
@@ -337,6 +442,56 @@ class Wine extends DataWrapper {
             this.changed();
         if (grape_changed)
             g_watchpoints.grape_names.notifyObservers();
+    }
+    merge(other, store) {
+        // Merge per-wine data.
+        let changed = false;
+        let grape = this.data.grape;
+        let comment = this.data.comment;
+        if (grape === '' && other.data.grape !== '') {
+            grape = other.data.grape;
+            changed = true;
+        }
+        else if (other.data.grape !== '' && other.data.grape !== grape) {
+            return MergeResult.kGrapeConflict;
+        }
+        if (comment === '' && other.data.comment !== '') {
+            comment = other.data.comment;
+            changed = true;
+        }
+        else if (other.data.comment !== '' && other.data.comment !== comment) {
+            return MergeResult.kCommentConflict;
+        }
+        // Commit.
+        this.data.grape = grape;
+        this.data.comment = comment;
+        if (changed)
+            this.changed();
+        // Merge years.
+        let years_left = false;
+        for (let y of other.years) {
+            // Don't duplicate deleted years.
+            if (y.data.count < 0)
+                continue;
+            let own = this.years_by_year.get(y.data.year);
+            if (own) {
+                if (own.merge(y)) {
+                    y.clickDelete();
+                }
+                else {
+                    years_left = true;
+                }
+            }
+            else {
+                store.createYear(y.data.CopyForWine(this.local_id));
+                y.clickDelete();
+            }
+        }
+        // Mark as deleted.
+        if (years_left === false) {
+            other.vineyard.deleteWine(other);
+        }
+        return MergeResult.kOK;
     }
     applyStock() { this.iterateYears(this.stock_applier); }
 }
@@ -464,6 +619,111 @@ class Year extends DataWrapper {
     addLog(log) {
         this.log_by_date.set(log.data.date, log);
         log.year = this;
+    }
+    merge(src) {
+        let changed = false;
+        if (this.data.count < 0) {
+            // Special case: {this} is deleted, take over all of {src}.
+            this.data.count = src.data.count;
+            this.data.stock = src.data.stock;
+            this.data.price = src.data.price;
+            this.data.comment = src.data.comment;
+            this.data.rating = src.data.rating;
+            this.data.value = src.data.value;
+            this.data.sweetness = src.data.sweetness;
+            this.data.age = src.data.age;
+            this.data.age_update = src.data.age_update;
+            this.data.location = src.data.location;
+            this.changed();
+            return true;
+        }
+        let count = this.data.count;
+        let stock = this.data.stock;
+        let price = this.data.price;
+        let comment = this.data.comment;
+        let rating = this.data.rating;
+        let value = this.data.value;
+        let sweetness = this.data.sweetness;
+        let age = this.data.age;
+        let age_update = this.data.age_update;
+        let location = this.data.location;
+        if (count === 0 && src.data.count !== 0) {
+            count = src.data.count;
+            changed = true;
+        }
+        else if (src.data.count !== 0 && src.data.count !== count) {
+            return false;
+        }
+        if (stock === 0 && src.data.stock !== 0) {
+            stock = src.data.stock;
+            changed = true;
+        }
+        else if (src.data.stock !== 0 && src.data.stock !== stock) {
+            return false;
+        }
+        if (price === 0 && src.data.price !== 0) {
+            price = src.data.price;
+            changed = true;
+        }
+        else if (src.data.price !== 0 && src.data.price !== price) {
+            return false;
+        }
+        if (comment === '' && src.data.comment !== '') {
+            comment = src.data.comment;
+            changed = true;
+        }
+        else if (src.data.comment !== '' && src.data.comment !== comment) {
+            return false;
+        }
+        if (rating === 0 && src.data.rating !== 0) {
+            rating = src.data.rating;
+            changed = true;
+        }
+        else if (src.data.rating !== 0 && src.data.rating !== rating) {
+            return false;
+        }
+        if (value === 0 && src.data.value !== 0) {
+            value = src.data.value;
+            changed = true;
+        }
+        else if (src.data.value !== 0 && src.data.value !== value) {
+            return false;
+        }
+        if (sweetness === 0 && src.data.sweetness !== 0) {
+            sweetness = src.data.sweetness;
+            changed = true;
+        }
+        else if (src.data.sweetness !== 0 && src.data.sweetness !== sweetness) {
+            return false;
+        }
+        if (age === 0 && src.data.age !== 0) {
+            age = src.data.age;
+            age_update = src.data.age_update;
+            changed = true;
+        }
+        else if (src.data.age !== 0 && src.data.age !== age) {
+            return false;
+        }
+        if (location === '' && src.data.location !== '') {
+            location = src.data.location;
+            changed = true;
+        }
+        else if (src.data.location !== '' && src.data.location !== location) {
+            return false;
+        }
+        this.data.count = count;
+        this.data.stock = stock;
+        this.data.price = price;
+        this.data.comment = comment;
+        this.data.rating = rating;
+        this.data.value = value;
+        this.data.sweetness = sweetness;
+        this.data.age = age;
+        this.data.age_update = age_update;
+        this.data.location = location;
+        if (changed)
+            this.changed();
+        return true;
     }
 }
 class Log extends DataWrapper {
@@ -632,6 +892,9 @@ class DataStore {
         this.server_uuid = uuid;
         this.persistServerUuid();
     }
+    getVineyardIfExists(name) {
+        return this.vineyards_by_name.get(name);
+    }
     getOrCreateVineyard(name) {
         let vineyard = this.vineyards_by_name.get(name);
         if (vineyard)
@@ -694,7 +957,7 @@ class DataStore {
     getVineyardNames() {
         let result = [];
         for (let v of this.vineyards) {
-            if (v)
+            if (v && v.data.name !== kDeleted)
                 result.push(v.data.name);
         }
         return result.sort();

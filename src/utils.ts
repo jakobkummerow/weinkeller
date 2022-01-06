@@ -10,6 +10,7 @@ enum GrapeColor {
 
 const kAny = '__any__';
 const kUnknown = '__unknown__';
+const kDeleted = '__deleted__';
 
 const kKnownGrapes: any = {
   // Must come before "Riesling" to prevent erroneous substring matches:
@@ -98,6 +99,16 @@ enum LogReason {
   kGivenAway = 12,
   kLost = 13,
   kStock = 20,
+}
+
+enum MergeResult {
+  kOK = 0,
+  kRegionConflict = 1,
+  kCountryConflict = 2,
+  kWebsiteConflict = 3,
+  kAddressConflict = 4,
+  kCommentConflict = 5,
+  kGrapeConflict = 6,
 }
 
 function IsValidReasonFor(reason: number, delta: number) {

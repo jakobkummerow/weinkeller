@@ -1,27 +1,44 @@
 "use strict";
 
 const kEditLang = {
-  edit: "Bearbeiten",
-  close: "Schließen",
-  save: "Speichern",
-  total_count: "Bestand (Flaschen)",
-  total_price: "Bestand (Preis)",
-  name: "Name",
-  country: "Land",
-  region: "Region",
-  website: "Website",
-  address: "Adresse",
-  comment: "Kommentar",
-  vineyard: "Weingut",
-  grape: "Traube",
-  maps_prefix: "https://www.google.de/maps/search/Weingut+",
+  edit: 'Bearbeiten',
+  close: 'Schließen',
+  save: 'Speichern',
+  total_count: 'Bestand (Flaschen)',
+  total_price: 'Bestand (Preis)',
+  name: 'Name',
+  country: 'Land',
+  region: 'Region',
+  website: 'Website',
+  address: 'Adresse',
+  comment: 'Kommentar',
+  vineyard: 'Weingut',
+  grape: 'Traube',
+  maps_prefix: 'https://www.google.de/maps/search/Weingut+',
+  confirm_merge_wine: 'Wein mit diesem Namen existiert schon; zusammenführen?',
+  confirm_merge_vineyard:
+  'Weingut mit diesem Namen existiert schon; zusammenführen?',
+  merge_failed: 'Zusammenführen fehlgeschlagen: widersprüchliche Daten für ',
 };
+
+function MergeResultToString(result: MergeResult) {
+  switch (result) {
+    case MergeResult.kOK: return "OK";
+    case MergeResult.kRegionConflict: return kEditLang.region;
+    case MergeResult.kCountryConflict: return kEditLang.country;
+    case MergeResult.kWebsiteConflict: return kEditLang.website;
+    case MergeResult.kAddressConflict: return kEditLang.address;
+    case MergeResult.kCommentConflict: return kEditLang.comment;
+    case MergeResult.kGrapeConflict: return kEditLang.grape;
+  }
+}
 
 class EditorRow {
   public tr = document.createElement('tr');
   protected td = document.createElement('td');
   protected input: HTMLInputElement | HTMLTextAreaElement | null = null;
-  protected value: string = "";
+  protected value: string = '';
+  protected saved_value = '';
 
   constructor(label: string) {
     let label_td = AddC(this.tr, 'td');
@@ -36,6 +53,9 @@ class EditorRow {
     this.value = value;
     SetText(this.td, value);
   }
+  public reset() {
+    this.update(this.saved_value);
+  }
   protected createInput(): HTMLInputElement | HTMLTextAreaElement {
     let input = document.createElement('input');
     input.className = 'edit';
@@ -46,6 +66,7 @@ class EditorRow {
     if (this.input === null) {
       this.input = this.createInput();
     }
+    this.saved_value = this.value;
     this.input.value = this.value;
     this.td.replaceChild(this.input, this.td.firstChild as Node);
   }
@@ -173,9 +194,9 @@ abstract class PopupEditor {
     this.update();
   }
 
-  public hide(event: Event) {
+  public hide(event: Event | null) {
     if (this.src === null) { throw "src cannot be null"; }
-    event.stopPropagation();
+    if (event) event.stopPropagation();
     this.src.unregisterObserver(this);
     this.src = null;
     this.background.style.display = 'none';
@@ -275,10 +296,31 @@ class VineyardEditor extends PopupEditor {
     let new_website = this.website.stopEditing();
     let new_address = this.address.stopEditing();
     let new_comment = this.comment.stopEditing();
-    (this.src as Vineyard).saveEdits(
-        new_name, new_country, new_region, new_website, new_address,
-        new_comment);
-    this.data.geo_cache.insertPair(new_country, new_region);
+
+    let vineyard = this.src as Vineyard;
+    let existing = this.data.vineyards_by_name.get(new_name);
+    if (!existing || existing === vineyard) {
+      vineyard.saveEdits(
+          new_name, new_country, new_region, new_website, new_address,
+          new_comment);
+      this.data.geo_cache.insertPair(new_country, new_region);
+      return;
+    }
+    if (confirm(kEditLang.confirm_merge_vineyard)) {
+      let result = existing.merge(vineyard, this.data);
+      if (result === MergeResult.kOK) {
+        this.hide(null);
+        return;
+      }
+      alert(kEditLang.merge_failed + MergeResultToString(result));
+      // Fall through to resetting fields.
+    }
+    this.name.reset();
+    this.country.reset();
+    this.region.reset();
+    this.website.reset();
+    this.address.reset();
+    this.comment.reset();
   }
 }
 
@@ -319,6 +361,24 @@ class WineEditor extends PopupEditor {
     let new_name = this.name.stopEditing();
     let new_grape = this.grape.stopEditing();
     let new_comment = this.comment.stopEditing();
-    (this.src as Wine).saveEdits(new_name, new_grape, new_comment);
+
+    let wine = this.src as Wine;
+    let existing = wine.vineyard.getWineIfExists(new_name);
+    if (!existing || existing === wine) {
+      wine.saveEdits(new_name, new_grape, new_comment);
+      return;
+    }
+    if (confirm(kEditLang.confirm_merge_wine)) {
+      let result = existing.merge(wine, this.data);
+      if (result === MergeResult.kOK) {
+        this.hide(null);
+        return;
+      }
+      alert(kEditLang.merge_failed + MergeResultToString(result));
+      // Fall through to resetting fields.
+    }
+    this.name.reset();
+    this.grape.reset();
+    this.comment.reset();
   }
 }
