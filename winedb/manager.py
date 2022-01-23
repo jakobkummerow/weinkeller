@@ -984,7 +984,7 @@ class Manager:
 
   def _FormatAge(self, age):
     return ["unbekannt", "zu jung", "wird noch besser", "genau richtig",
-            "muss weg", "zu alt"][age]
+            "bald trinken", "zu alt"][age]
 
   def _FormatDate(self, timestamp):
     if timestamp == 0: return ""
@@ -998,7 +998,8 @@ class Manager:
              years.sweetness as sweetness, years.age as age,
              years.age_update as age_update,
              years.comment as comment, years.location as location,
-             wines.name as wine_name, vineyards.name as vineyard_name
+             wines.name as wine_name, wines.grape as grape,
+             vineyards.name as vineyard_name
       FROM years
       INNER JOIN wines ON years.wine = wines.id
       INNER JOIN vineyards ON wines.vineyard = vineyards.id
@@ -1007,13 +1008,13 @@ class Manager:
     writer = csv.writer(output)
     writer.writerow(["Weingut", "Wein", "Jahr", "Anzahl", "Preis", "Kommentar",
                      "Bewertung", "Preis/Leist", "Süße", "Alter", "(update)",
-                     "Lagerort"])
+                     "Lagerort", "Traube"])
     for r in c:
       row = [r["vineyard_name"], r["wine_name"], r["year"], r["count"],
              r["price"], r["comment"], self._FormatRating(r["rating"]),
              self._FormatRating(r["value"]), self._FormatRating(r["sweetness"]),
              self._FormatAge(r["age"]), self._FormatDate(r["age_update"]),
-             r["location"]]
+             r["location"], r["grape"]]
       writer.writerow(row)
     return output.getvalue()
 

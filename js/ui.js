@@ -30,7 +30,7 @@ var kLang = {
     value_labels: ['Herausragend', 'Sehr gut', 'Solide', 'Mäßig', 'Schlecht'],
     sweetness_labels: ['Dessertwein', 'lieblich', 'feinherb', 'trocken', 'sauer'],
     ages: [
-        'unbekannt', 'zu jung', 'wird noch besser', 'genau richtig', 'muss weg',
+        'unbekannt', 'zu jung', 'wird noch besser', 'genau richtig', 'bald trinken',
         'zu alt'
     ],
     total: 'Insgesamt:',

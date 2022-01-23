@@ -170,7 +170,7 @@ class Connection {
     findWork() {
         if (!this.data.global_dirtybit)
             return null;
-        const kMax = 2; // TODO: bump!
+        const kMax = 100; // Could bump even more.
         let vineyards = [];
         for (let v of this.data.vineyards) {
             if (!v)
