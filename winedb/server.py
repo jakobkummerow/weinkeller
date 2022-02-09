@@ -1,12 +1,7 @@
 from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-import os
-import selectors
-import socket
-import ssl
 import threading
-import time
 import urllib
 
 from .manager import Manager
@@ -17,6 +12,7 @@ class WineHandler(BaseHTTPRequestHandler):
     self._server = server
     self._basedir = server.basedir
     super().__init__(request, client_address, server)
+    self._origin = None  # Will be set later, for each request.
 
   def _set_headers(self, content_type):
     self.send_response(200)
@@ -66,7 +62,7 @@ class WineHandler(BaseHTTPRequestHandler):
         mimetype = "application/x-typescript"
       if mimetype is not None:
         self._set_headers(mimetype)
-        with open(self._basedir + path, "r") as f:
+        with open(self._basedir + path, "r", encoding="utf-8") as f:
           self.wfile.write(f.read().encode('utf-8'))
         return
       if path == "/favicon.ico":
@@ -74,7 +70,7 @@ class WineHandler(BaseHTTPRequestHandler):
         with open(self._basedir + path, "rb") as f:
           self.wfile.write(f.read())
     except IOError:
-      self.send_error(404, "File not found: %s" % self.path)
+      self.send_error(404, f"File not found: {self.path}")
 
     raw_query = parsed_path.query
     query = urllib.parse.parse_qs(raw_query)
@@ -127,9 +123,9 @@ class WineHandler(BaseHTTPRequestHandler):
     elif path == "/export" or path == "/api/export":
       self.send_response(200)
       self.send_header("Content-type", "text/csv")
-      filename = "wines-%s.csv" % date.today()
+      filename = f"wines-{date.today()}.csv"
       self.send_header("Content-Disposition",
-                       "attachment;filename=\"%s\"" % filename)
+                       f"attachment;filename=\"{filename}\"")
       self.end_headers()
       result = self._server.manager.ExportCSV()
       self.wfile.write(result.encode('utf-8'))
@@ -154,10 +150,9 @@ class WineHandler(BaseHTTPRequestHandler):
     elif content_type == "application/json":
       # The v2 way of doing things.
       post_data = json.loads(raw)
-    # print("post data: %s" % self._post_data)
 
     if self.path == "/api/set":
-      print("request: %s" % post_data)
+      print(f"request: {post_data}")
       response = self._server.manager.Set(post_data)
       self._send_json2(response)
 
@@ -303,6 +298,7 @@ class WineServer(HTTPServer):
   def __init__(self, port, db_file, basedir):
     super().__init__(('', port), WineHandler)
     self.manager = None
+    self.thread = None
     self.db_file = db_file
     self.basedir = basedir
     self.shutdown_done = threading.Event()
@@ -314,7 +310,7 @@ class WineServer(HTTPServer):
 
   def _Run(self):
     self.manager = Manager(self.db_file)
-    print("Server läuft auf Port %d" % self.server_address[1])
+    print(f"Server läuft auf Port {self.server_address[1]}")
     try:
       self.serve_forever()
     finally:

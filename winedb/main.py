@@ -1,9 +1,6 @@
 import configparser
-import datetime
 import os
 import socket
-import subprocess
-import sys
 
 from .server import WineServer
 
@@ -19,8 +16,9 @@ class Main():
     except socket.gaierror:
       # This happens when there is no network connection at all.
       self.ip = 'localhost'
-    print("detected IP: %s" % self.ip)
-    self.address = "http://%s:%d" % (self.ip, self.confPort())
+    print(f"detected IP: {self.ip}")
+    self.address = f"http://{self.ip}:{self.confPort()}"
+    self.server = None  # Will be created later.
 
   def _InitSettings(self):
     if Main.key_settings not in self.config:
@@ -77,7 +75,7 @@ class Main():
   def _Settings(self):
     return self.config[Main.key_settings]
   def _SaveSettings(self):
-    with open(self.config_filename, 'w') as configfile:
+    with open(self.config_filename, 'w', encoding='utf-8') as configfile:
       self.config.write(configfile)
 
   key_settings = 'Settings'

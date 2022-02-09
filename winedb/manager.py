@@ -195,15 +195,13 @@ class Manager:
     self.SetUUID()
     self._lastchange = self.GetLastChange()
     self._has_update_scope = False
-    # TODO: create index?
     # TODO: vacuum?
-    # TODO: temporary implementation:
     if filename == ":memory:":
       print("Populating in-memory database with fake data...")
       self.Set(MakeFakeData())
 
-    print("self._lastchange is now: %d" % self._lastchange)
-    print("and computed from database: %d" % self.GetLastChange())
+    print(f"self._lastchange is now: {self._lastchange}")
+    print(f"and computed from database: {self.GetLastChange()}")
 
   def Shutdown(self):
     print("Datenbank wird gespeichert")
@@ -216,13 +214,13 @@ class Manager:
   def _MonthlyDatabaseBackup(self, filename):
     if filename == ":memory:": return
     today = datetime.date.today().strftime("%Y-%m")
-    backup_name = "%s-%s-backup" % (filename, today)
+    backup_name = f"{filename}-{today}-backup"
     if os.path.exists(backup_name): return
     shutil.copyfile(filename, backup_name)
 
   def _BackupDatabase(self, filename, version):
     if filename == ":memory:": return
-    backup_name = "%s-database-version-%d-autobackup" % (filename, version)
+    backup_name = f"{filename}-database-version-{version}-autobackup"
     shutil.copyfile(filename, backup_name)
 
   def ApplyDatabaseUpdates(self, filename):
@@ -296,7 +294,7 @@ class Manager:
     # creation code at the top of this function!
 
   def _GetLastChange(self, table):
-    c = self._conn.execute("SELECT MAX(lastchange) FROM %s" % table)
+    c = self._conn.execute(f"SELECT MAX(lastchange) FROM {table}")
     maybe = c.fetchone()[0]
     return maybe if maybe is not None else 0
 
@@ -318,7 +316,7 @@ class Manager:
       self._conn.commit()
     else:
       self.uuid = maybe[0]
-    print("Server UUID: %s" % self.uuid)
+    print(f"Server UUID: {self.uuid}")
 
   def Execute(self, stmt, args=None):
     if (stmt.startswith("UPDATE") or stmt.startswith('INSERT')):
@@ -447,7 +445,7 @@ class Manager:
       c = self.Execute("SELECT * FROM vineyards WHERE name=?", (v["name"],))
       r = c.fetchone()
       if r is None:
-        print("INSERT vineyard: %s" % v)
+        print(f"INSERT vineyard: {v}")
         c = self.Execute("""
             INSERT INTO vineyards(name, country, region, address, website,
                                   comment, lastchange)
@@ -456,7 +454,7 @@ class Manager:
              v["comment"], self._lastchange))
         return c.lastrowid
       server_id = r["id"]
-    print("UPDATE vineyard: %s" % v)
+    print(f"UPDATE vineyard: {v}")
     self.Execute("""
         UPDATE vineyards
         SET name=?, country=?, region=?, address=?, website=?, comment=?,
@@ -474,7 +472,7 @@ class Manager:
       (w["name"], w["vineyard_id"]))
       r = c.fetchone()
       if r is None:
-        print("INSERT wine: %s" % w)
+        print(f"INSERT wine: {w}")
         c = self.Execute("""
             INSERT INTO wines(vineyard, name, grape, comment, lastchange)
             VALUES (?, ?, ?, ?, ?)""",
@@ -482,7 +480,7 @@ class Manager:
              self._lastchange))
         return c.lastrowid
       server_id = r["id"]
-    print("UPDATE wine: %s" % w)
+    print(f"UPDATE wine: {w}")
     self.Execute(
         "UPDATE wines SET name=?, grape=?, comment=?, lastchange=? WHERE id=?",
         (w["name"], w["grape"], w["comment"], self._lastchange, server_id))
@@ -496,7 +494,7 @@ class Manager:
                        (y["year"], y["wine_id"]))
       r = c.fetchone()
       if r is None:
-        print("INSERT year: %s" % y)
+        print(f"INSERT year: {y}")
         c = self.Execute("""
             INSERT INTO years(wine, year, count, stock, price, rating, value,
                               sweetness, age, age_update, comment, location,
@@ -507,7 +505,7 @@ class Manager:
              y["comment"], y["location"], self._lastchange))
         return c.lastrowid
       server_id = r["id"]
-    print("UPDATE year: %s" % y)
+    print(f"UPDATE year: {y}")
     self.Execute("""
         UPDATE years
         SET count=?, stock=?, price=?, rating=?, value=?, sweetness=?, age=?,
@@ -526,7 +524,7 @@ class Manager:
                        (l["date"], l["year_id"]))
       r = c.fetchone()
       if r is None:
-        print("INSERT log: %s" % l)
+        print(f"INSERT log: {l}")
         c = self.Execute("""
             INSERT INTO log(date, wine, delta, reason, comment, lastchange)
             VALUES (?, ?, ?, ?, ?, ?)""",
@@ -534,7 +532,7 @@ class Manager:
              self._lastchange))
         return c.lastrowid
       server_id = r["id"]
-    print("UPDATE log: %s" % l)
+    print(f"UPDATE log: {l}")
     self.Execute(
         "UPDATE log SET delta=?, reason=?, comment=?, lastchange=? WHERE id=?",
         (l["delta"], l["reason"], l["comment"], self._lastchange, server_id))
@@ -574,7 +572,7 @@ class Manager:
     for row in c:
       result.append({
           "log_id": row["log_id"], "date": row["date"],
-          "wine": "%s %s %d" % (row["vineyard"], row["wine"], row["year"]),
+          "wine": f'{row["vineyard"]} {row["wine"]} {row["year"]}',
           "delta": row["delta"], "reason": row["reason"]})
     return result
 
@@ -768,7 +766,7 @@ class Manager:
   def UpdateRating(self, year_id, what, val):
     with Update(self):
       self.Execute(
-          "UPDATE years SET %s=?, lastchange=? WHERE id=?" % what,
+          f"UPDATE years SET {what}=?, lastchange=? WHERE id=?",
           (val, self._lastchange, year_id))
 
   def GetAll(self, only_existing):
@@ -820,13 +818,13 @@ class Manager:
       sortby = "price"
     direction = w[1]
     if direction not in ("asc", "desc"): direction = "asc"
-    return "%s %s" % (sortby, direction)
+    return f"{sortby} {direction}"
 
   def GetSorted(self, only_existing, sortby):
     result = []
     sortby = self.GetSortKey(sortby)
-    filter = "count > 0" if only_existing else "count >= 0"
-    c = self.Execute("""
+    condition = "count > 0" if only_existing else "count >= 0"
+    c = self.Execute(f"""
       SELECT years.id as year_id, years.year as year, years.count as count,
              years.stock as stock,
              years.price as price, years.rating as rating, years.value as value,
@@ -838,8 +836,8 @@ class Manager:
       FROM years
       INNER JOIN wines ON years.wine = wines.id
       INNER JOIN vineyards ON wines.vineyard = vineyards.id
-      WHERE %s
-      ORDER BY %s""" % (filter, sortby))
+      WHERE {condition}
+      ORDER BY {sortby}""")
     for r in c:
       result.append({
         "year_id": r["year_id"],

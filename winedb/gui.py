@@ -28,14 +28,13 @@ class SystemTrayIcon(qt.QSystemTrayIcon):
         self.main_win.hide()
       else:
         self.main_win.show()
-    pass
 
 class Window(qt.QMainWindow):
   def __init__(self, app):
     super().__init__()
     self.app = app
 
-    self.statusBar().showMessage("Server läuft auf %s" % app.getAddress())
+    self.statusBar().showMessage(f"Server läuft auf {app.getAddress()}")
     self.setWindowTitle("Weinkeller Server")
 
     mainpart = qt.QWidget()
@@ -109,12 +108,12 @@ class Window(qt.QMainWindow):
     if not os.path.exists(".git"):
       return "Kein git-Checkout gefunden."
     old_version = subprocess.check_output("git log -1 --format=%H", shell=True)
-    print("old version: %s" % old_version)
+    print(f"old version: {old_version}")
     code = subprocess.call("git pull", shell=True)
     if code != 0:
-      return "'git pull' fehlgeschlagen, code: %d" % code
+      return f"'git pull' fehlgeschlagen, code: {code}"
     new_version = subprocess.check_output("git log -1 --format=%H", shell=True)
-    print("new version: %s" % new_version)
+    print(f"new version: {new_version}")
     if new_version == old_version:
       return "Keine neuere Version gefunden."
     return "Update installiert, bitte Server neu starten"
