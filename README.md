@@ -1,29 +1,39 @@
 # Weinkeller
 
-A small application to keep track of the contents of your wine cellar. 
-How many bottles of which year of which wine from which vineyard do you have, 
+A small application to keep track of the contents of your wine cellar.
+How many bottles of which year of which wine from which vineyard do you have,
 and how do you like them?
 
-Designed as a client-server application: run the server component on any 
-computer on your home network, access it via web browser from however many 
+Designed as a client-server application: run the server component on any
+computer on your home network, access it via web browser from however many
 clients you like (including the same computer that runs the server, of course).
-For example, you can take a laptop/tablet/phone to walk into your cellar and 
-count bottles there. Losing wifi coverage temporarily is not an issue: the 
-client is fully offline capable, it holds all data locally and syncs with the 
+For example, you can take a laptop/tablet/phone to walk into your cellar and
+count bottles there. Losing wifi coverage temporarily is not an issue: the
+client is fully offline capable, it holds all data locally and syncs with the
 server when network connectivity is restored.
 
-The app's user interface is currently in German; offering other languages is 
+The app's user interface is currently in German; offering other languages is
 planned for the future.
 
 # Recommended installation
 
 ### Requirements
 
-Many Linux systems have everything they need out of the box; on other systems 
-you may have to install these:
+Many **Linux** systems have everything they need out of the box; on other
+systems you may have to install these:
 - git
 - Python 3.x
 - PyQt5 (optional, for server GUI)
+
+On **MacOS**, a simple way to get git and Python is to install the "Xcode
+command-line tools": open a terminal and type `xcode-select --install` (see
+[here](https://mac.install.guide/commandlinetools/4.html) or your favorite
+search engine for more details). Getting PyQt5 appears to be a bit more involved
+and is probably best done with Homebrew; you can skip that and run the server
+in headless mode (see "Tips" below), or see the "Minimal installation" below.
+
+On **Windows** you could use Cygwin or WSL (both untested), or see the "Minimal
+installation" below.
 
 ### Installation
 
@@ -36,7 +46,7 @@ Optionally create a shortcut to the included file `start.py` on your desktop.
 
 1. Start the server by clicking the shortcut you created earlier, or by typing
   `~/weinkeller/start.py` in a terminal.
-1. Either click the button "open in browser" in the window that opens, or 
+1. Either click the button "open in browser" in the window that opens, or
   manually type the address into your browser's address bar, e.g.
   `192.168.0.42:7887`
 
@@ -44,8 +54,8 @@ Optionally create a shortcut to the included file `start.py` on your desktop.
 
 You can click the system tray icon to minimize the server to the tray.
 
-You can leave the server running when you shut down your computer; many 
-desktop environments will automatically restart it when you boot the system 
+You can leave the server running when you shut down your computer; many
+desktop environments will automatically restart it when you boot the system
 up again.
 
 You can create a browser bookmark so you won't have to type the address again.
@@ -62,6 +72,11 @@ instead. In that case, you won't be able to use the built-in updater.
 If the recommended requirements are too onerous, you can use these instructions
 instead. The instructions below assume that this may be the case on Windows;
 they translate to other systems in a straightforward manner.
+
+Drawbacks of the minimal installation compared to the recommended installation:
+- no built-in updater
+- no graphical user interface for the server (just command line)
+- the server may be a bit slow for huge databases
 
 ### Requirements
 
@@ -100,7 +115,7 @@ Type the address that's printed (e.g. `192.168.1.42:7887`) into your browser.
 To stop the server and save all data, switch to the command prompt window
 and hit `<Ctrl>+<C>`.
 
-The first time you start the server, you may have to grant it access to the 
+The first time you start the server, you may have to grant it access to the
 network in the Windows Firewall dialog window that pops up.
 
 #### Alternative: manual start

@@ -213,6 +213,7 @@ class Manager:
   # month, do that now.
   def _MonthlyDatabaseBackup(self, filename):
     if filename == ":memory:": return
+    if not os.path.exists(filename): return
     today = datetime.date.today().strftime("%Y-%m")
     backup_name = f"{filename}-{today}-backup"
     if os.path.exists(backup_name): return
