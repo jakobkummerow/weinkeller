@@ -53,7 +53,11 @@ class PopupRatingRow extends PopupRow {
     }
   }
   public updateRating(value: number) {
-    if (value === 0) return;  // "0" means "not set".
+    if (value === 0) {
+      // "0" means "not set". Undo any previous display.
+      for (let i of this.inputs) i.checked = false;
+      return;
+    }
     this.inputs[(this.count - value)].checked = true;
   }
 }
