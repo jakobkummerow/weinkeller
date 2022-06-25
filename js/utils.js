@@ -21,8 +21,10 @@ const kKnownGrapes = {
     "Dornfelder": GrapeColor.kRed,
     "Frühburgunder": GrapeColor.kRed,
     "Gewürztraminer": GrapeColor.kWhite,
+    "Grenache": GrapeColor.kRed,
     "Gutedel": GrapeColor.kWhite,
     "Grauburgunder": GrapeColor.kWhite,
+    "Grüner Veltliner": GrapeColor.kWhite,
     "Kerner": GrapeColor.kWhite,
     "Lagrein": GrapeColor.kRed,
     "Lemberger": GrapeColor.kRed,
@@ -43,6 +45,7 @@ const kKnownGrapes = {
     "Souvignier Gris": GrapeColor.kWhite,
     "Spätburgunder": GrapeColor.kRed,
     "Syrah": GrapeColor.kRed,
+    "Tempranillo": GrapeColor.kRed,
     "Trollinger": GrapeColor.kRed,
     "Vernatsch": GrapeColor.kRed,
     "Viognier": GrapeColor.kWhite,
@@ -60,6 +63,7 @@ const kGrapeGuesses = {
     'Pinot Gris': 'Grauburgunder',
     'Pinot Grigio': 'Grauburgunder',
     'Pinot Noir': 'Spätburgunder',
+    'St. Laurent': 'Saint Laurent',
     'Weißer Burgunder': 'Weißburgunder',
 };
 function GuessGrapeForWine(wine) {
