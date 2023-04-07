@@ -19,6 +19,7 @@ var kSideLang = {
     color_only_rose: "nur rosé",
     unknown: "unbekannt",
     grapes_all: "alle Trauben",
+    years_all: "alle Jahre",
     countries_all: "alle Länder",
     regions_all: "alle Regionen",
     reasons: {
@@ -64,9 +65,11 @@ class DynamicDropdown {
             option.value = v;
             AddT(option, v);
         }
-        let unknown = AddC(this.select, 'option');
-        unknown.value = kUnknown;
-        AddT(unknown, kSideLang.unknown);
+        if (this.showUnknownOption()) {
+            let unknown = AddC(this.select, 'option');
+            unknown.value = kUnknown;
+            AddT(unknown, kSideLang.unknown);
+        }
         this.customSetup();
         return this.select;
     }
@@ -95,6 +98,7 @@ class DynamicDropdown {
     // Subclasses may override.
     displayStyle(value) { return ''; }
     customSetup() { }
+    showUnknownOption() { return true; }
 }
 class GrapeFilter extends DynamicDropdown {
     constructor() {
@@ -122,6 +126,21 @@ class GrapeFilter extends DynamicDropdown {
             return '';
         }
         return 'none';
+    }
+}
+class YearFilter extends DynamicDropdown {
+    constructor() {
+        super(...arguments);
+        this.all_label = kSideLang.years_all;
+    }
+    getValues() {
+        return this.data.year_cache.getYears();
+    }
+    customSetup() {
+        g_watchpoints.years.registerObserver(this);
+    }
+    showUnknownOption() {
+        return false;
     }
 }
 class CountryFilter extends DynamicDropdown {
@@ -179,6 +198,7 @@ class Sidebar {
         this.filter_div = document.createElement('div');
         this.grape_color_select = document.createElement('select');
         this.grape_select = new GrapeFilter();
+        this.year_select = new YearFilter();
         this.country_select = new CountryFilter();
         this.region_select = new RegionFilter();
         this.reason_add_select = document.createElement('select');
@@ -213,9 +233,12 @@ class Sidebar {
         let color_unknown = AddC(this.grape_color_select, 'option');
         color_unknown.value = GrapeColor.kUnknown;
         AddT(color_unknown, kSideLang.unknown);
-        // Grapes, countries, regions.
+        // Grapes, years, countries, regions.
         this.filter_div.appendChild(this.grape_select.create(this.winelist.data, (_) => {
             this.changeGrapeFilter();
+        }));
+        this.filter_div.appendChild(this.year_select.create(this.winelist.data, (_) => {
+            this.changeYearFilter();
         }));
         this.filter_div.appendChild(this.country_select.create(this.winelist.data, (_) => {
             this.changeCountryFilter();
@@ -416,6 +439,12 @@ class Sidebar {
         this.winelist.setGrapeFilter(grape);
         this.updateFilterHighlight();
     }
+    changeYearFilter() {
+        let year = this.year_select.value();
+        let year_number = year === kAny ? 0 : +year;
+        this.winelist.setYearFilter(year_number);
+        this.updateFilterHighlight();
+    }
     changeCountryFilter() {
         let country = this.country_select.value();
         this.winelist.setCountryFilter(country);
@@ -432,10 +461,12 @@ class Sidebar {
     updateFilterHighlight() {
         let color_filter = this.grape_color_select.value;
         let grape_filter = this.grape_select.value();
+        let year_filter = this.year_select.value();
         let country_filter = this.country_select.value();
         let region_filter = this.region_select.value();
         if (color_filter === GrapeColor.kAny && grape_filter === kAny &&
-            country_filter === kAny && region_filter === kAny) {
+            year_filter === kAny && country_filter === kAny &&
+            region_filter === kAny) {
             this.filter_div.classList.remove('checked');
         }
         else {

@@ -975,6 +975,7 @@ class TableSorter {
   private only_existing = true;
   private color_filter = GrapeColor.kAny;
   private grape_filter = kAny;
+  private year_filter = 0;
   private country_filter = kAny;
   private region_filter = kAny;
   private getYear = (year: Year) => year.data.year;
@@ -1041,6 +1042,11 @@ class TableSorter {
     this.grape_filter = grape;
     this.sortAgain();
   }
+  public setYearFilter(year: number) {
+    if (year === this.year_filter) return;
+    this.year_filter = year;
+    this.sortAgain();
+  }
   public setCountryFilter(country: string) {
     if (country === this.country_filter) return;
     this.country_filter = country;
@@ -1083,6 +1089,9 @@ class TableSorter {
       } else {
         if (grape !== this.grape_filter) return false;
       }
+    }
+    if (this.year_filter !== 0) {
+      if (year.data.year !== this.year_filter) return false;
     }
     if (this.country_filter !== kAny) {
       const country = year.wine.vineyard.data.country;
@@ -1418,6 +1427,9 @@ class WinelistUI {
   }
   public setGrapeFilter(grape: string) {
     this.sorter.setGrapeFilter(grape);
+  }
+  public setYearFilter(year: number) {
+    this.sorter.setYearFilter(year);
   }
   public setCountryFilter(country: string) {
     this.sorter.setCountryFilter(country);

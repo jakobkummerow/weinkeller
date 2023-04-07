@@ -179,6 +179,7 @@ class Watchpoints {
         this.vineyard_regions = new Observable();
         this.totals = new TotalsWatchPoint();
         this.grapes = new StringAdditionObservable();
+        this.years = new StringAdditionObservable();
         this.countries = new StringAdditionObservable();
         this.regions = new StringAdditionObservable();
         this.locations = new StringAdditionObservable();
@@ -514,6 +515,8 @@ class Year extends DataWrapper {
     clickPlus(count = 1) {
         this.data.count += count;
         this.changed();
+        if (this.data.count > 0)
+            this.store.year_cache.update(this.data.year);
         g_watchpoints.totals.notifyDelta(this.data.price, count);
         this.store.recordLog(this, count);
     }
@@ -808,7 +811,6 @@ class GrapeCache {
     constructor(store) {
         this.store = store;
         this.grapes = new Set();
-        this.grapes = new Set();
     }
     update(grape) {
         if (this.grapes.has(grape))
@@ -823,6 +825,26 @@ class GrapeCache {
                 grapes.push(g);
         }
         return grapes.sort();
+    }
+}
+class YearCache {
+    constructor(store) {
+        this.store = store;
+        this.years = new Set();
+    }
+    update(year) {
+        if (this.years.has(year))
+            return;
+        this.years.add(year);
+        g_watchpoints.years.notifyObservers(year.toString());
+    }
+    getYears() {
+        let years = [];
+        for (let y of this.years.values()) {
+            years.push(y);
+        }
+        years.sort((a, b) => a - b);
+        return years.map((y) => y.toString());
     }
 }
 class LocationCache {
@@ -870,6 +892,7 @@ class DataStore {
         this.connection = null;
         this.geo_cache = new GeoCache(this);
         this.grape_cache = new GrapeCache(this);
+        this.year_cache = new YearCache(this);
         this.location_cache = new LocationCache(this);
     }
     dataChanged() {
@@ -1270,6 +1293,9 @@ class DataStore {
         wine.addYear(y);
         if (this.ui) {
             this.ui.addYear(y);
+        }
+        if (data.count > 0) {
+            this.year_cache.update(data.year);
         }
         this.location_cache.update(data.location);
         if (data.isDirty())
