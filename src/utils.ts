@@ -18,6 +18,7 @@ const kKnownGrapes: any = {
   // Rest of the list is alpha-sorted:
   "Auxerrois": GrapeColor.kWhite,
   "Bacchus": GrapeColor.kWhite,
+  "Cabernet Franc": GrapeColor.kRed,
   "Cabernet Sauvignon": GrapeColor.kRed,
   "Chardonnay": GrapeColor.kWhite,
   "Dornfelder": GrapeColor.kRed,
