@@ -125,13 +125,11 @@ abstract class HideableNameTD {
   startStockMode() {
     if (this.stock_mode) return;
     this.stock_mode = true;
-    if (this.hidden) return;
     this.getStockApplyButton().style.display = 'inline-block';
   }
   stopStockMode() {
     if (!this.stock_mode) return;
     this.stock_mode = false;
-    if (this.hidden) return;
     if (!this.stock_apply_button) throw "must startStockMode() before stopping";
     this.stock_apply_button.style.display = 'none';
   }
