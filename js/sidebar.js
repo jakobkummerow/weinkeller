@@ -84,7 +84,7 @@ class DynamicDropdown {
         // Cast is guaranteed to be fine because of "unknown" option.
         do {
             p = p.nextSibling;
-        } while (p.value !== kUnknown && p.value < value);
+        } while (p && p.value !== kUnknown && p.value < value);
         this.select.insertBefore(option, p);
     }
     updateShown() {
