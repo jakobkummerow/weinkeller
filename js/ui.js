@@ -816,6 +816,8 @@ class EditTR extends HideableTR {
                 }
                 else {
                     y.clickPlus(count);
+                    if (this.data.ui)
+                        this.data.ui.reviveYear(y);
                 }
             }
             else {

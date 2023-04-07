@@ -844,6 +844,7 @@ class EditTR extends HideableTR {
           y.clickStockPlus(count);
         } else {
           y.clickPlus(count);
+          if (this.data.ui) this.data.ui.reviveYear(y);
         }
       } else {
         alert(kLang.year_exists);
