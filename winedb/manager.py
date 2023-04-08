@@ -187,11 +187,12 @@ def MakeFakeData():
 
 class Manager:
   def __init__(self, filename):
-    self._MonthlyDatabaseBackup(filename)
+    self._filename = filename
+    self._MonthlyDatabaseBackup()
     conn = sqlite3.connect(filename)
     self._conn = conn
     conn.row_factory = sqlite3.Row
-    self.ApplyDatabaseUpdates(filename)
+    self.ApplyDatabaseUpdates()
     self.SetUUID()
     self._lastchange = self.GetLastChange()
     self._has_update_scope = False
@@ -211,20 +212,30 @@ class Manager:
 
   # Backup strategy: if no backup has been created yet in the current calendar
   # month, do that now.
-  def _MonthlyDatabaseBackup(self, filename):
-    if filename == ":memory:": return
-    if not os.path.exists(filename): return
+  def _MonthlyDatabaseBackup(self):
+    if self._filename == ":memory:": return
+    if not os.path.exists(self._filename): return
     today = datetime.date.today().strftime("%Y-%m")
-    backup_name = f"{filename}-{today}-backup"
+    backup_name = f"{self._filename}-{today}-backup"
     if os.path.exists(backup_name): return
-    shutil.copyfile(filename, backup_name)
+    shutil.copyfile(self._filename, backup_name)
 
-  def _BackupDatabase(self, filename, version):
-    if filename == ":memory:": return
-    backup_name = f"{filename}-database-version-{version}-autobackup"
-    shutil.copyfile(filename, backup_name)
+  # Same as above, but for the current day. Triggered on demand, e.g. when
+  # applying stock-taking mode end results.
+  def _ExtraBackup(self):
+    if self._filename == ":memory:": return
+    if not os.path.exists(self._filename): return
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    backup_name = f"{self._filename}-{today}-backup"
+    if os.path.exists(backup_name): return
+    shutil.copyfile(self._filename, backup_name)
 
-  def ApplyDatabaseUpdates(self, filename):
+  def _BackupDatabase(self, version):
+    if self._filename == ":memory:": return
+    backup_name = f"{self._filename}-database-version-{version}-autobackup"
+    shutil.copyfile(self._filename, backup_name)
+
+  def ApplyDatabaseUpdates(self):
     version = self._conn.execute("PRAGMA user_version").fetchone()[0]
     if version < 1:
       c = self._conn.cursor()
@@ -245,21 +256,21 @@ class Manager:
         version = 6
       else:
         print("Updating database version 0->1...")
-        self._BackupDatabase(filename, version)
+        self._BackupDatabase(version)
         self._conn.execute("ALTER TABLE years ADD COLUMN value REAL DEFAULT 0")
         self._conn.execute("PRAGMA user_version = 1")
         self._conn.commit()
         version = 1
     if version < 2:
       print("Updating database version 1->2...")
-      self._BackupDatabase(filename, version)
+      self._BackupDatabase(version)
       self._conn.execute("ALTER TABLE years ADD COLUMN stock INTEGER DEFAULT 0")
       self._conn.execute("PRAGMA user_version = 2")
       self._conn.commit()
       version = 2
     if version < 3:
       print("Updating database version 2->3...")
-      self._BackupDatabase(filename, version)
+      self._BackupDatabase(version)
       add_lastchange = "ALTER TABLE %s ADD COLUMN lastchange INTEGER DEFAULT 1"
       self._conn.execute(add_lastchange % "vineyards")
       self._conn.execute(add_lastchange % "wines")
@@ -270,14 +281,14 @@ class Manager:
       version = 3
     if version < 4:
       print("Updating database version 3->4...")
-      self._BackupDatabase(filename, version)
+      self._BackupDatabase(version)
       self._conn.execute(CREATE_DATA)
       self._conn.execute("PRAGMA user_version = 4")
       self._conn.commit()
       version = 4
     if version < 5:
       print("Updating database version 4->5...")
-      self._BackupDatabase(filename, version)
+      self._BackupDatabase(version)
       self._conn.execute(
           "ALTER TABLE years ADD COLUMN location TEXT DEFAULT \"\"")
       self._conn.execute("PRAGMA user_version = 5")
@@ -285,7 +296,7 @@ class Manager:
       version = 5
     if version < 6:
       print("Updating database version 5->6...")
-      self._BackupDatabase(filename, version)
+      self._BackupDatabase(version)
       self._conn.execute(
           "ALTER TABLE years ADD COLUMN age_update INTEGER DEFAULT 0")
       self._conn.execute("PRAGMA user_version = 6")
@@ -395,6 +406,8 @@ class Manager:
     }
 
   def Set(self, postdata):
+    if "extra_backup" in postdata:
+      self._ExtraBackup()
     with Update(self):
       result = {}
       receipts = {}

@@ -556,6 +556,7 @@ class Year extends DataWrapper<YearData> {
       this.changed();
       g_watchpoints.totals.notifyDelta(price_delta, count_delta);
       this.store.recordLogApplyStock(this, count_delta);
+      this.store.extra_backup = true;
     }
   }
   resetStock() {
@@ -864,6 +865,7 @@ class DataStore {
   log: Log[] = [];
   log_by_server_id = new Map<number, Log>();
   global_dirtybit = false;
+  extra_backup = false;
 
   db: IDBDatabase;
   next_vineyard_id: number = 0;

@@ -167,28 +167,32 @@ class Connection {
   private findWork() {
     if (!this.data.global_dirtybit) return null;
     const kMax = 100;  // Could bump even more.
+    let found = 0;
+    let extra_backup = this.data.extra_backup;
+    this.data.extra_backup = false;
     let vineyards = [];
     for (let v of this.data.vineyards) {
+      if (found >= kMax) break;
       if (!v) continue;
       let data = v.data;
       if (!data.isDirty()) continue;
       vineyards.push(data.packForSync(v.local_id));
-      if (vineyards.length >= kMax) break;
+      found++;
     }
-    if (vineyards.length > 0) return {vineyards};
     let wines = [];
     for (let w of this.data.wines) {
+      if (found >= kMax) break;
       if (!w) continue;
       let data = w.data;
       if (!data.isDirty()) continue;
       let pack = data.packForSync(w.local_id);
       pack.vineyard_id = w.vineyard.data.server_id;
       wines.push(pack);
-      if (wines.length >= kMax) break;
+      found++;
     }
-    if (wines.length > 0) return {wines};
     let years = [];
     for (let y of this.data.years) {
+      if (found >= kMax) break;
       if (!y) continue;
       let data = y.data;
       if (!data.isDirty()) continue;
@@ -197,22 +201,24 @@ class Connection {
       let pack = data.packForSync(y.local_id);
       pack.wine_id = y.wine.data.server_id;
       years.push(pack);
-      if (years.length >= kMax) break;
+      found++;
     }
-    if (years.length > 0) return {years};
     let log = [];
     for (let l of this.data.log) {
+      if (found >= kMax) break;
       if (!l) continue;
       let data = l.data;
       if (!data.isDirty()) continue;
       let pack = data.packForSync(l.local_id);
       pack.year_id = l.year.data.server_id;
       log.push(pack);
-      if (log.length >= kMax) break;
+      found++;
     }
-    if (log.length > 0) return {log};
-    this.data.global_dirtybit = false;
-    return null;
+    if (found < kMax) {
+      this.data.global_dirtybit = false;
+      if (found === 0) return null;
+    }
+    return {vineyards, wines, years, log, extra_backup};
   }
 
   // Like findWork, but ignores dirty bits and sends everything.
