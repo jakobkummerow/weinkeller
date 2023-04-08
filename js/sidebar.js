@@ -365,13 +365,14 @@ class Sidebar {
         let collapsed_body_padding = `${padding}px`;
         document.body.style.paddingRight = normal_body_padding;
         let right = width + padding;
-        let animation = this.div.animate([/*{translate: '0px'},*/ { translate: `${right}px` }], { duration: 300, iterations: 1, fill: "forwards" });
+        let animation = this.div.animate([{ translate: '0px' }, { translate: `${right}px` }], { duration: 300, iterations: 1, fill: "forwards" });
         animation.pause();
         this.div.onclick = (e) => {
             if (e.target !== this.div)
                 return;
             if (this.collapsed) {
                 this.collapsed = false;
+                // We don't animate the body because that's too slow to look good.
                 document.body.style.paddingRight = normal_body_padding;
                 animation.playbackRate = -1;
                 animation.play();
