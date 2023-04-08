@@ -206,6 +206,7 @@ class Sidebar {
         this.special_tools_div = document.createElement('div');
         this.special_tools_mode = document.createElement('input');
         this.special_tools_buttons = document.createElement('span');
+        this.collapsed = false;
         document.body.appendChild(this.div);
         this.div.className = 'sidebar';
     }
@@ -350,6 +351,38 @@ class Sidebar {
             event.stopPropagation();
             this.specialPushAll();
         });
+        // Collapsing support.
+        function StripPx(str) {
+            if (str.endsWith("px")) {
+                str = str.substring(0, str.length - 2);
+            }
+            return +str;
+        }
+        let style = window.getComputedStyle(this.div);
+        let width = StripPx(style.width);
+        let padding = StripPx(style.paddingRight);
+        let normal_body_padding = `${width + 2 * padding}px`;
+        let collapsed_body_padding = `${padding}px`;
+        document.body.style.paddingRight = normal_body_padding;
+        let right = width + padding;
+        let animation = this.div.animate([/*{translate: '0px'},*/ { translate: `${right}px` }], { duration: 300, iterations: 1, fill: "forwards" });
+        animation.pause();
+        this.div.onclick = (e) => {
+            if (e.target !== this.div)
+                return;
+            if (this.collapsed) {
+                this.collapsed = false;
+                document.body.style.paddingRight = normal_body_padding;
+                animation.playbackRate = -1;
+                animation.play();
+            }
+            else {
+                this.collapsed = true;
+                document.body.style.paddingRight = collapsed_body_padding;
+                animation.playbackRate = 1;
+                animation.play();
+            }
+        };
     }
     toggleSpecialTools() {
         this.special_tools_mode.checked = !this.special_tools_mode.checked;

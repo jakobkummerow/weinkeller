@@ -2,7 +2,6 @@ body {
   background-color: #ECEFF1;
   font-family: Arial;
   font-size: 12pt;
-  padding-right: 200px; /* sidebar.width + 2 * sidebar.padding */
 }
 
 select {

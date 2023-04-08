@@ -206,6 +206,7 @@ class Sidebar {
   private special_tools_div = document.createElement('div');
   private special_tools_mode = document.createElement('input');
   private special_tools_buttons = document.createElement('span');
+  private collapsed = false;
 
   constructor(private winelist: WinelistUI, private connection: Connection) {
     document.body.appendChild(this.div);
@@ -369,6 +370,39 @@ class Sidebar {
           event.stopPropagation();
           this.specialPushAll();
         });
+
+    // Collapsing support.
+    function StripPx(str: string) {
+      if (str.endsWith("px")) {
+        str = str.substring(0, str.length - 2);
+      }
+      return +str;
+    }
+    let style = window.getComputedStyle(this.div);
+    let width = StripPx(style.width);
+    let padding = StripPx(style.paddingRight);
+    let normal_body_padding = `${width + 2 * padding}px`;
+    let collapsed_body_padding = `${padding}px`;
+    document.body.style.paddingRight = normal_body_padding;
+    let right = width + padding;
+    let animation = this.div.animate(
+        [/*{translate: '0px'},*/ {translate: `${right}px`}],
+        {duration: 300, iterations: 1, fill: "forwards"});
+    animation.pause();
+    this.div.onclick = (e) => {
+      if (e.target !== this.div) return;
+      if (this.collapsed) {
+        this.collapsed = false;
+        document.body.style.paddingRight = normal_body_padding;
+        animation.playbackRate = -1;
+        animation.play();
+      } else {
+        this.collapsed = true;
+        document.body.style.paddingRight = collapsed_body_padding;
+        animation.playbackRate = 1;
+        animation.play();
+      }
+    }
   }
 
   private toggleSpecialTools() {
