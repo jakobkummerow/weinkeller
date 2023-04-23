@@ -101,6 +101,22 @@ class Window(qt.QMainWindow):
   def showwin_toggled(self, checked):
     self.app.main.setConfShowWindowStartup(checked)
 
+  def MaybePerformMasterToMainMigration(self):
+    kFrom = "master"
+    kTo = "main"
+    branch = subprocess.check_output("git rev-parse --abbrev-ref HEAD",
+                                     shell=True)
+    branch = branch.decode('utf-8', 'ignore').strip()
+    if branch != kFrom: return 1001
+    code = subprocess.call(f"git log -1 origin/{kTo} >/dev/null", shell=True)
+    if code != 0: return 1002
+    # Current branch is "master", and "origin/main" exists, so migrate!
+    subprocess.call(f"git branch -m {kFrom} {kTo}", shell=True)
+    subprocess.call("git fetch origin", shell=True)
+    subprocess.call(f"git branch -u origin/{kTo} {kTo}", shell=True)
+    subprocess.call("git remote set-head origin -a", shell=True)
+    return subprocess.call("git pull", shell=True)
+
   def AttemptUpdate(self):
     code = subprocess.call("which git", shell=True)
     if code != 0:
@@ -111,7 +127,9 @@ class Window(qt.QMainWindow):
     print(f"old version: {old_version}")
     code = subprocess.call("git pull", shell=True)
     if code != 0:
-      return f"'git pull' fehlgeschlagen, code: {code}"
+      code2 = self.MaybePerformMasterToMainMigration()
+      if code2 != 0:
+        return f"'git pull' fehlgeschlagen, code: {code},{code2}"
     new_version = subprocess.check_output("git log -1 --format=%H", shell=True)
     print(f"new version: {new_version}")
     if new_version == old_version:
