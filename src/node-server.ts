@@ -579,6 +579,10 @@ process.on('SIGBREAK', () => {
   Shutdown();
 });
 
+process.on('SIGHUP', () => {
+  Shutdown();
+});
+
 function GetIpAddress() {
   let interfaces = os.networkInterfaces();
   let fallback = "localhost";
