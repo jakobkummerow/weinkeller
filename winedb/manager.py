@@ -1015,6 +1015,7 @@ class Manager:
       FROM years
       INNER JOIN wines ON years.wine = wines.id
       INNER JOIN vineyards ON wines.vineyard = vineyards.id
+      WHERE count > 0
       ORDER BY vineyard_name ASC, wine_name ASC, year ASC""")
     output = io.StringIO()
     writer = csv.writer(output)
