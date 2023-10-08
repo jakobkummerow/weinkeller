@@ -35,7 +35,7 @@ var kLang = {
     ],
     total: 'Insgesamt:',
 };
-var kPricePattern = "[0-9]{1,3}([\.|,][0-9]{1,2})?";
+var kPricePattern = "[0-9]{1,3}([.,][0-9]{1,2})?";
 const kRow = 'tr';
 const kCell = 'td';
 const kLocationListId = 'storage_location_completions';

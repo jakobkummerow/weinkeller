@@ -79,6 +79,10 @@ class WineHandler(BaseHTTPRequestHandler):
       client_knows_commit = query["last_commit"][0]
       self._send_json2(self._server.manager.GetAll2(client_knows_commit))
 
+    if path == "/api/special":
+      requested = query["type"][0]
+      self._send_json2(self._server.manager.Special(requested))
+
     elif path == "/get_all":
       only_existing = query["only_existing"][0]
       self._send_json(self._server.manager.GetAll(only_existing))

@@ -38,6 +38,7 @@ var kSideLang = {
         "neu vom Server. Sicher?",
     refetch_all: "Alles neu laden",
     push_all: "Alles neu senden",
+    consistency: "Konsistenz-Check",
 };
 function FormatReason(int) {
     return kSideLang.reasons[int];
@@ -351,6 +352,10 @@ class Sidebar {
             event.stopPropagation();
             this.specialPushAll();
         });
+        AddButton(this.special_tools_buttons, kSideLang.consistency, 'generic', (event) => {
+            event.stopPropagation();
+            this.specialConsistency();
+        });
         // Collapsing support.
         function StripPx(str) {
             if (str.endsWith("px")) {
@@ -407,6 +412,9 @@ class Sidebar {
     }
     specialPushAll() {
         this.connection.kick(RequestType.kPushAll);
+    }
+    specialConsistency() {
+        this.connection.kick(RequestType.kConsistency);
     }
     toggleEditMode(e) {
         if (e.target.tagName == "LABEL")

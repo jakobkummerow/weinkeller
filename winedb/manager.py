@@ -423,6 +423,7 @@ class Manager:
       if "wines" in postdata:
         wine_receipts = []
         for wine in postdata["wines"]:
+          if wine["vineyard_id"] == 0: continue
           server_id = self._SetWine(wine)
           wine_receipts.append({
               "server_id": server_id,
@@ -432,6 +433,7 @@ class Manager:
       if "years" in postdata:
         year_receipts = []
         for year in postdata["years"]:
+          if year["wine_id"] == 0: continue
           server_id = self._SetYear(year)
           year_receipts.append({
               "server_id": server_id,
@@ -441,6 +443,7 @@ class Manager:
       if "log" in postdata:
         log_receipts = []
         for log in postdata["log"]:
+          if log["year_id"] == 0: continue
           server_id = self._SetLog(log)
           log_receipts.append({
             "server_id": server_id,
@@ -452,22 +455,29 @@ class Manager:
       result["commit"] = self._lastchange
       return result
 
+  def _AddVineyard(self, v):
+    print(f"INSERT vineyard: {v}")
+    c = self.Execute("""
+        INSERT INTO vineyards(name, country, region, address, website,
+                              comment, lastchange)
+        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (v["name"], v["country"], v["region"], v["address"], v["website"],
+          v["comment"], self._lastchange))
+    return c.lastrowid
+
   def _SetVineyard(self, v):
     server_id = v["server_id"]
-    # TODO: for robustness, verify that such an entry actually exists.
     if not server_id:
       c = self.Execute("SELECT * FROM vineyards WHERE name=?", (v["name"],))
       r = c.fetchone()
       if r is None:
-        print(f"INSERT vineyard: {v}")
-        c = self.Execute("""
-            INSERT INTO vineyards(name, country, region, address, website,
-                                  comment, lastchange)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (v["name"], v["country"], v["region"], v["address"], v["website"],
-             v["comment"], self._lastchange))
-        return c.lastrowid
+        return self._AddVineyard(v)
       server_id = r["id"]
+    else:
+      c = self.Execute("SELECT * FROM vineyards WHERE id=?", (server_id,))
+      r = c.fetchone()
+      if r is None:
+        return self._AddVineyard(v)
     print(f"UPDATE vineyard: {v}")
     self.Execute("""
         UPDATE vineyards
@@ -478,47 +488,84 @@ class Manager:
          v["comment"], self._lastchange, server_id))
     return server_id
 
+  def _AddWine(self, w):
+    print(f"INSERT wine: {w}")
+    c = self.Execute("""
+        INSERT INTO wines(vineyard, name, grape, comment, lastchange)
+        VALUES (?, ?, ?, ?, ?)""",
+        (w["vineyard_id"], w["name"], w["grape"], w["comment"],
+          self._lastchange))
+    return c.lastrowid
+
   def _SetWine(self, w):
     server_id = w["server_id"]
-    # TODO: for robustness, verify that such an entry actually exists.
     if not server_id:
       c = self.Execute("SELECT * FROM wines WHERE name=? AND vineyard=?",
       (w["name"], w["vineyard_id"]))
       r = c.fetchone()
       if r is None:
-        print(f"INSERT wine: {w}")
-        c = self.Execute("""
-            INSERT INTO wines(vineyard, name, grape, comment, lastchange)
-            VALUES (?, ?, ?, ?, ?)""",
-            (w["vineyard_id"], w["name"], w["grape"], w["comment"],
-             self._lastchange))
-        return c.lastrowid
+        return self._AddWine(w)
       server_id = r["id"]
+    else:
+      c = self.Execute("SELECT * FROM wines WHERE id=?", (server_id,))
+      r = c.fetchone()
+      if r is None:
+        return self._AddWine(w)
+      if r["vineyard"] == 0:
+        # This case (and the equivalents for years and logs) serves to recover
+        # from a bug found in 2023-10. We can probably delete it after a while.
+        print(f"UPDATE wine (new vineyard): {w}")
+        self.Execute("""
+            UPDATE wines
+            SET vineyard=?, name=?, grape=?, comment=?, lastchange=?
+            WHERE id=?""",
+            (w["vineyard_id"], w["name"], w["grape"], w["comment"],
+             self._lastchange, server_id))
+        return server_id
     print(f"UPDATE wine: {w}")
     self.Execute(
         "UPDATE wines SET name=?, grape=?, comment=?, lastchange=? WHERE id=?",
         (w["name"], w["grape"], w["comment"], self._lastchange, server_id))
     return server_id
 
+  def _AddYear2(self, y):
+    print(f"INSERT year: {y}")
+    c = self.Execute("""
+        INSERT INTO years(wine, year, count, stock, price, rating, value,
+                          sweetness, age, age_update, comment, location,
+                          lastchange)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (y["wine_id"], y["year"], y["count"], y["stock"], y["price"],
+          y["rating"], y["value"], y["sweetness"], y["age"], y["age_update"],
+          y["comment"], y["location"], self._lastchange))
+    return c.lastrowid
+
   def _SetYear(self, y):
     server_id = y["server_id"]
-    # TODO: for robustness, verify that such an entry actually exists.
     if not server_id:
       c = self.Execute("SELECT * FROM years WHERE year=? AND wine=?",
                        (y["year"], y["wine_id"]))
       r = c.fetchone()
       if r is None:
-        print(f"INSERT year: {y}")
-        c = self.Execute("""
-            INSERT INTO years(wine, year, count, stock, price, rating, value,
-                              sweetness, age, age_update, comment, location,
-                              lastchange)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (y["wine_id"], y["year"], y["count"], y["stock"], y["price"],
-             y["rating"], y["value"], y["sweetness"], y["age"], y["age_update"],
-             y["comment"], y["location"], self._lastchange))
-        return c.lastrowid
+        return self._AddYear2(y)
       server_id = r["id"]
+    else:
+      c = self.Execute("SELECT * FROM years WHERE id=?", (server_id,))
+      r = c.fetchone()
+      if r is None:
+        return self._AddYear2(y)
+      if r["wine"] == 0:
+        print(f"UPDATE year (new wine): {y}")
+        self.Execute("""
+            UPDATE years
+            SET wine=?, count=?, stock=?, price=?, rating=?, value=?,
+                sweetness=?, age=?, age_update=?, comment=?, location=?,
+                lastchange=?
+            WHERE id=?""",
+            (y["wine_id"], y["count"], y["stock"], y["price"], y["rating"],
+             y["value"], y["sweetness"], y["age"], y["age_update"],
+             y["comment"], y["location"], self._lastchange, server_id))
+        return server_id
     print(f"UPDATE year: {y}")
     self.Execute("""
         UPDATE years
@@ -530,27 +577,65 @@ class Manager:
          self._lastchange, server_id))
     return server_id
 
+  def _AddLog(self, l):
+    print(f"INSERT log: {l}")
+    c = self.Execute("""
+        INSERT INTO log(date, wine, delta, reason, comment, lastchange)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        (l["date"], l["year_id"], l["delta"], l["reason"], l["comment"],
+          self._lastchange))
+    return c.lastrowid
+
   def _SetLog(self, l):
     server_id = l["server_id"]
-    # TODO: for robustness, verify that such an entry actually exists.
     if not server_id:
       c = self.Execute("SELECT * FROM log WHERE date=? AND wine=?",
                        (l["date"], l["year_id"]))
       r = c.fetchone()
       if r is None:
-        print(f"INSERT log: {l}")
-        c = self.Execute("""
-            INSERT INTO log(date, wine, delta, reason, comment, lastchange)
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (l["date"], l["year_id"], l["delta"], l["reason"], l["comment"],
-             self._lastchange))
-        return c.lastrowid
+        return self._AddLog(l)
       server_id = r["id"]
+    else:
+      c = self.Execute("SELECT * FROM log WHERE id=?", (server_id,))
+      r = c.fetchone()
+      if r is None:
+        return self._AddLog(l)
+      if r["wine"] == 0:
+        print(f"UPDATE log (new wine): {l}")
+        self.Execute("""
+            UPDATE log
+            SET wine=?, delta=?, reason=?, comment=?, lastchange=?
+            WHERE id=?""",
+            (l["year_id"], l["delta"], l["reason"], l["comment"],
+             self._lastchange, server_id))
+        return server_id
     print(f"UPDATE log: {l}")
     self.Execute(
         "UPDATE log SET delta=?, reason=?, comment=?, lastchange=? WHERE id=?",
         (l["delta"], l["reason"], l["comment"], self._lastchange, server_id))
     return server_id
+
+  def Special(self, requested):
+    if requested == "consistency":
+      wines = []
+      years = []
+      log = []
+      c = self.Execute("SELECT * FROM wines WHERE vineyard=0")
+      for row in c:
+        wines.append(int(row["id"]))
+      c = self.Execute("SELECT * FROM years WHERE wine=0")
+      for row in c:
+        years.append(int(row["id"]))
+      c = self.Execute("SELECT * FROM log WHERE wine=0")
+      for row in c:
+        log.append(int(row["id"]))
+      return {
+        "resend": {
+          "wines": wines,
+          "years": years,
+          "log": log,
+        }
+      }
 
   ################# LEGACY (v1) FUNCTIONALITY ######################
 

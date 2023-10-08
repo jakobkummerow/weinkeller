@@ -39,6 +39,7 @@ var kSideLang = {
                    "neu vom Server. Sicher?",
   refetch_all: "Alles neu laden",
   push_all: "Alles neu senden",
+  consistency: "Konsistenz-Check",
 };
 
 function FormatReason(int: number): string {
@@ -370,6 +371,12 @@ class Sidebar {
           event.stopPropagation();
           this.specialPushAll();
         });
+    AddButton(
+        this.special_tools_buttons, kSideLang.consistency, 'generic',
+        (event) => {
+          event.stopPropagation();
+          this.specialConsistency();
+        });
 
     // Collapsing support.
     function StripPx(str: string) {
@@ -426,6 +433,9 @@ class Sidebar {
   }
   private specialPushAll() {
     this.connection.kick(RequestType.kPushAll);
+  }
+  private specialConsistency() {
+    this.connection.kick(RequestType.kConsistency);
   }
 
   private toggleEditMode(e: MouseEvent) {

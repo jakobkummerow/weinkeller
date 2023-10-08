@@ -6,6 +6,7 @@ enum RequestType {
   kManualSync = 1,
   kFetchAll = 1 << 1,
   kPushAll = 1 << 2,
+  kConsistency = 1 << 3,
 };
 
 const kConnLang = {
@@ -134,6 +135,11 @@ class Connection {
       this.queued_requests &= ~RequestType.kPushAll;
       return this.pushAll();
     }
+    if (this.queued_requests & RequestType.kConsistency) {
+      console.log('Consistency check requested');
+      this.queued_requests &= ~RequestType.kConsistency;
+      return this.sendGet('api/special', {type: 'consistency'});
+    }
     this.queued_requests &= ~RequestType.kManualSync;
     let updates = this.findWork();
     if (updates !== null) {
@@ -146,6 +152,7 @@ class Connection {
 
   processResponse(response: any) {
     if (this.processUuid(response)) return this.disable_loop();
+    if (this.processConsistencyChecks(response)) return;
     let had_receipts = this.processReceipts(response.receipts);
     let had_data = this.processData(response);
     if (had_receipts) {
@@ -171,51 +178,77 @@ class Connection {
     let extra_backup = this.data.extra_backup;
     this.data.extra_backup = false;
     let vineyards = [];
-    for (let v of this.data.vineyards) {
-      if (found >= kMax) break;
-      if (!v) continue;
-      let data = v.data;
-      if (!data.isDirty()) continue;
-      vineyards.push(data.packForSync(v.local_id));
-      found++;
-    }
     let wines = [];
-    for (let w of this.data.wines) {
-      if (found >= kMax) break;
-      if (!w) continue;
-      let data = w.data;
-      if (!data.isDirty()) continue;
-      let pack = data.packForSync(w.local_id);
-      pack.vineyard_id = w.vineyard.data.server_id;
-      wines.push(pack);
-      found++;
-    }
     let years = [];
-    for (let y of this.data.years) {
-      if (found >= kMax) break;
-      if (!y) continue;
-      let data = y.data;
-      if (!data.isDirty()) continue;
-      // Important: this is the one place where we don't ignore years
-      // with data.count < 0, because we still want to tell the server.
-      let pack = data.packForSync(y.local_id);
-      pack.wine_id = y.wine.data.server_id;
-      years.push(pack);
-      found++;
-    }
     let log = [];
-    for (let l of this.data.log) {
-      if (found >= kMax) break;
-      if (!l) continue;
-      let data = l.data;
-      if (!data.isDirty()) continue;
-      let pack = data.packForSync(l.local_id);
-      pack.year_id = l.year.data.server_id;
-      log.push(pack);
-      found++;
-    }
+    let stop = false;
+    do {
+      for (let v of this.data.vineyards) {
+        if (found >= kMax) break;
+        if (!v) continue;
+        let data = v.data;
+        if (!data.isDirty()) continue;
+        let packed = data.packForSync(v.local_id);
+        vineyards.push(packed);
+        if (packed.server_id === 0) stop = true;
+        found++;
+      }
+      // Transmit one category of data at a time in order to have a chance
+      // to set server_id fields of the next dependent category. E.g. when
+      // creating a new vineyard and a new wine, set the vineyard's server_id
+      // (based on the response) before transmitting the wine.
+      if (stop) break;
+      for (let w of this.data.wines) {
+        if (found >= kMax) break;
+        if (!w) continue;
+        let data = w.data;
+        if (!data.isDirty()) continue;
+        let pack = data.packForSync(w.local_id);
+        pack.vineyard_id = w.vineyard.data.server_id;
+        if (pack.vineyard_id === 0) {
+          alert("Server-ID of vineyard is 0, this is a bug.");
+          return;
+        }
+        if (pack.server_id === 0) stop = true;
+        wines.push(pack);
+        found++;
+      }
+      if (stop) break;
+      for (let y of this.data.years) {
+        if (found >= kMax) break;
+        if (!y) continue;
+        let data = y.data;
+        if (!data.isDirty()) continue;
+        // Important: this is the one place where we don't ignore years
+        // with data.count < 0, because we still want to tell the server.
+        let pack = data.packForSync(y.local_id);
+        pack.wine_id = y.wine.data.server_id;
+        if (pack.wine_id === 0) {
+          alert("Server-ID of wine is 0, this is a bug.");
+          return;
+        }
+        if (pack.server_id === 0) stop = true;
+        years.push(pack);
+        found++;
+      }
+      if (stop) break;
+      for (let l of this.data.log) {
+        if (found >= kMax) break;
+        if (!l) continue;
+        let data = l.data;
+        if (!data.isDirty()) continue;
+        let pack = data.packForSync(l.local_id);
+        pack.year_id = l.year.data.server_id;
+        if (pack.year_id === 0) {
+          alert("Server-ID of year is 0, this is a bug.");
+          return;
+        }
+        log.push(pack);
+        found++;
+      }
+    } while (false);
     if (found < kMax) {
-      this.data.global_dirtybit = false;
+      if (!stop) this.data.global_dirtybit = false;
       if (found === 0) return null;
     }
     return {vineyards, wines, years, log, extra_backup};
@@ -224,30 +257,41 @@ class Connection {
   // Like findWork, but ignores dirty bits and sends everything.
   private pushAll() {
     let vineyards = [];
+    let wines = [];
+    let years = [];
+    let log = [];
     for (let v of this.data.vineyards) {
       if (!v) continue;
       vineyards.push(v.data.packForSync(v.local_id));
     }
-    if (vineyards.length > 0) return {vineyards};
-    let wines = [];
     for (let w of this.data.wines) {
       if (!w) continue;
       let pack = w.data.packForSync(w.local_id);
       pack.vineyard_id = w.vineyard.data.server_id;
+      if (pack.vineyard_id === 0) {
+        alert("Server-ID of vineyard is 0, this is a bug.");
+        return;
+      }
       wines.push(pack);
     }
-    let years = [];
     for (let y of this.data.years) {
       if (!y) continue;
       let pack = y.data.packForSync(y.local_id);
       pack.wine_id = y.wine.data.server_id;
+      if (pack.wine_id === 0) {
+        alert("Server-ID of wine is 0, this is a bug.");
+        return;
+      }
       years.push(pack);
     }
-    let log = [];
     for (let l of this.data.log) {
       if (!l) continue;
       let pack = l.data.packForSync(l.local_id);
       pack.year_id = l.year.data.server_id;
+      if (pack.year_id === 0) {
+        alert("Server-ID of year is 0, this is a bug.");
+        return;
+      }
       log.push(pack);
     }
     return this.sendPost({vineyards, wines, years, log});
@@ -380,6 +424,57 @@ class Connection {
     if (commit !== this.last_commit) {
       this.last_commit = commit;
       this.data.setLastServerCommit(commit);
+      return true;
+    }
+    return false;
+  }
+
+  private processConsistencyChecks(response: any) {
+    let resend = response.resend;
+    if (resend) {
+      let wines = [];
+      let years = [];
+      let log = [];
+      if (resend.wines) {
+        let wine_ids = new Set<number>();
+        for (let w of resend.wines) {
+          wine_ids.add(+w);
+        }
+        for (let w of this.data.wines) {
+          if (!w) continue;
+          if (!wine_ids.has(w.data.server_id)) continue;
+          let pack = w.data.packForSync(w.local_id);
+          pack.vineyard_id = w.vineyard.data.server_id;
+          wines.push(pack);
+        }
+      }
+      if (resend.years) {
+        let year_ids = new Set<number>();
+        for (let y of resend.years) {
+          year_ids.add(+y);
+        }
+        for (let y of this.data.years) {
+          if (!y) continue;
+          if (!year_ids.has(y.data.server_id)) continue;
+          let pack = y.data.packForSync(y.local_id);
+          pack.wine_id = y.wine.data.server_id;
+          years.push(pack);
+        }
+      }
+      if (resend.log) {
+        let log_ids = new Set<number>();
+        for (let l of resend.log) {
+          log_ids.add(+l);
+        }
+        for (let l of this.data.log) {
+          if (!l) continue;
+          if (!log_ids.has(l.data.server_id)) continue;
+          let pack = l.data.packForSync(l.local_id);
+          pack.year_id = l.year.data.server_id;
+          log.push(pack);
+        }
+      }
+      this.sendPost({wines, years, log});
       return true;
     }
     return false;
