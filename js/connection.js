@@ -364,6 +364,12 @@ class Connection {
                 if (!log.data.server_id) {
                     this.data.log_by_server_id.set(l.server_id, log);
                 }
+                else if (l.server_id != log.data.server_id) {
+                    // The server sent us a new ID, update local data.
+                    this.data.log_by_server_id.delete(log.data.server_id);
+                    this.data.log_by_server_id.set(l.server_id, log);
+                    log.data.server_id = 0; // {markSyncDone} will set it properly.
+                }
                 log.markSyncDone(l.server_id);
                 had_receipts = true;
             }

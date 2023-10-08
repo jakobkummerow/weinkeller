@@ -609,6 +609,10 @@ class Manager:
             (l["year_id"], l["delta"], l["reason"], l["comment"],
              self._lastchange, server_id))
         return server_id
+      if r["wine"] != l["year_id"] or r["date"] != l["date"]:
+        # Recover from traces of 2023-10 bug.
+        print("mismatch detected -> ", end=None)
+        return self._AddLog(l)
     print(f"UPDATE log: {l}")
     self.Execute(
         "UPDATE log SET delta=?, reason=?, comment=?, lastchange=? WHERE id=?",
