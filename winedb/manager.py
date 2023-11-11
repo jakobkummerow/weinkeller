@@ -1093,6 +1093,8 @@ class Manager:
     return d.isoformat()
 
   def ExportCSV(self):
+    # Skip deleted years, but include empty years, in order to see
+    # comments/ratings for them.
     c = self.Execute("""
       SELECT years.year as year, years.count as count,
              years.price as price, years.rating as rating, years.value as value,
@@ -1104,7 +1106,7 @@ class Manager:
       FROM years
       INNER JOIN wines ON years.wine = wines.id
       INNER JOIN vineyards ON wines.vineyard = vineyards.id
-      WHERE count > 0
+      WHERE count >= 0
       ORDER BY vineyard_name ASC, wine_name ASC, year ASC""")
     output = io.StringIO()
     writer = csv.writer(output)
