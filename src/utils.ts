@@ -4,6 +4,9 @@ enum GrapeColor {
   kRed = "red",
   kRose = "rose",
   kWhite = "white",
+  // Bit of a hack to treat sparkling wine as another color, but fits in
+  // well with both implementation and usability.
+  kSparkling = "sparkling",
   kUnknown = "unknown",
   kAny = "any",  // For convenience.
 }
@@ -58,6 +61,7 @@ const kKnownGrapes: any = {
   "rosé": GrapeColor.kRose,
   "rot": GrapeColor.kRed,
   "weiß": GrapeColor.kWhite,
+  "Sekt": GrapeColor.kSparkling,
 };
 
 const kGrapeGuesses: any = {
@@ -89,7 +93,11 @@ for (let grape in kKnownGrapes) {
 }
 
 const kRosePattern = /(\bros(e\b|é(?=[\s)"',.?!\-])|é$)|\bweißherbst\b)/iu;
+// Must end at a word boundary, but not necessarily start at one, in order
+// to match "Rieslingsekt" etc.
+const kSparklingPattern = /sekt\b/iu;
 function ColorForGrape(grape: string, wine_name: string) {
+  if (kSparklingPattern.test(wine_name)) return GrapeColor.kSparkling;
   if (kRosePattern.test(wine_name)) return GrapeColor.kRose;
   if (grape === "" || !kGrapeColorMap.has(grape)) return GrapeColor.kUnknown;
   return kGrapeColorMap.get(grape);

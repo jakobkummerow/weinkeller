@@ -17,6 +17,7 @@ var kSideLang = {
     color_only_red: "nur rot",
     color_only_white: "nur weiß",
     color_only_rose: "nur rosé",
+    color_only_sparkling: "nur Sekt",
     unknown: "unbekannt",
     grapes_all: "alle Trauben",
     years_all: "alle Jahre",
@@ -232,6 +233,9 @@ class Sidebar {
         let color_rose = AddC(this.grape_color_select, 'option');
         color_rose.value = GrapeColor.kRose;
         AddT(color_rose, kSideLang.color_only_rose);
+        let color_sparkling = AddC(this.grape_color_select, 'option');
+        color_sparkling.value = GrapeColor.kSparkling;
+        AddT(color_sparkling, kSideLang.color_only_sparkling);
         let color_unknown = AddC(this.grape_color_select, 'option');
         color_unknown.value = GrapeColor.kUnknown;
         AddT(color_unknown, kSideLang.unknown);

@@ -4,6 +4,9 @@ var GrapeColor;
     GrapeColor["kRed"] = "red";
     GrapeColor["kRose"] = "rose";
     GrapeColor["kWhite"] = "white";
+    // Bit of a hack to treat sparkling wine as another color, but fits in
+    // well with both implementation and usability.
+    GrapeColor["kSparkling"] = "sparkling";
     GrapeColor["kUnknown"] = "unknown";
     GrapeColor["kAny"] = "any";
 })(GrapeColor || (GrapeColor = {}));
@@ -56,6 +59,7 @@ const kKnownGrapes = {
     "rosé": GrapeColor.kRose,
     "rot": GrapeColor.kRed,
     "weiß": GrapeColor.kWhite,
+    "Sekt": GrapeColor.kSparkling,
 };
 const kGrapeGuesses = {
     'Grauer Burgunder': 'Grauburgunder',
@@ -85,7 +89,12 @@ for (let grape in kKnownGrapes) {
     kGrapeColorMap.set(grape, kKnownGrapes[grape]);
 }
 const kRosePattern = /(\bros(e\b|é(?=[\s)"',.?!\-])|é$)|\bweißherbst\b)/iu;
+// Must end at a word boundary, but not necessarily start at one, in order
+// to match "Rieslingsekt" etc.
+const kSparklingPattern = /sekt\b/iu;
 function ColorForGrape(grape, wine_name) {
+    if (kSparklingPattern.test(wine_name))
+        return GrapeColor.kSparkling;
     if (kRosePattern.test(wine_name))
         return GrapeColor.kRose;
     if (grape === "" || !kGrapeColorMap.has(grape))
