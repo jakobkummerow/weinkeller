@@ -57,12 +57,17 @@ const kKnownGrapes: any = {
   "Viognier": GrapeColor.kWhite,
   "Weißburgunder": GrapeColor.kWhite,
   "Zweigelt": GrapeColor.kRed,
-  // Escape hatch: when in doubt, just say "white"/"red" grape.
+};
+
+// Escape hatch: when in doubt, just say "white"/"red" grape.
+// These are a separate enum because we don't want to use them for
+// automatic grape guessing, due to false positives (e.g. "Berg Rottland").
+const kCatchAllGrapes: any = {
   "rosé": GrapeColor.kRose,
   "rot": GrapeColor.kRed,
   "weiß": GrapeColor.kWhite,
   "Sekt": GrapeColor.kSparkling,
-};
+}
 
 const kGrapeGuesses: any = {
   'Grauer Burgunder': 'Grauburgunder',
@@ -90,6 +95,9 @@ function GuessGrapeForWine(wine: string): string {
 var kGrapeColorMap = new Map<string, GrapeColor>();
 for (let grape in kKnownGrapes) {
   kGrapeColorMap.set(grape, kKnownGrapes[grape] as GrapeColor);
+}
+for (let grape in kCatchAllGrapes) {
+  kGrapeColorMap.set(grape, kCatchAllGrapes[grape] as GrapeColor);
 }
 
 const kRosePattern = /(\bros(e\b|é(?=[\s)"',.?!\-])|é$)|\bweißherbst\b)/iu;

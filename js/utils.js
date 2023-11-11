@@ -55,7 +55,11 @@ const kKnownGrapes = {
     "Viognier": GrapeColor.kWhite,
     "Weißburgunder": GrapeColor.kWhite,
     "Zweigelt": GrapeColor.kRed,
-    // Escape hatch: when in doubt, just say "white"/"red" grape.
+};
+// Escape hatch: when in doubt, just say "white"/"red" grape.
+// These are a separate enum because we don't want to use them for
+// automatic grape guessing, due to false positives (e.g. "Berg Rottland").
+const kCatchAllGrapes = {
     "rosé": GrapeColor.kRose,
     "rot": GrapeColor.kRed,
     "weiß": GrapeColor.kWhite,
@@ -87,6 +91,9 @@ function GuessGrapeForWine(wine) {
 var kGrapeColorMap = new Map();
 for (let grape in kKnownGrapes) {
     kGrapeColorMap.set(grape, kKnownGrapes[grape]);
+}
+for (let grape in kCatchAllGrapes) {
+    kGrapeColorMap.set(grape, kCatchAllGrapes[grape]);
 }
 const kRosePattern = /(\bros(e\b|é(?=[\s)"',.?!\-])|é$)|\bweißherbst\b)/iu;
 // Must end at a word boundary, but not necessarily start at one, in order
