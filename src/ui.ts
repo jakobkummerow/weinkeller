@@ -317,8 +317,37 @@ class PriceTD extends EditableTD {
 }
 
 class CommentTD extends EditableTD {
+  private expanded = false;
+  private ellipsis: HTMLButtonElement|null = null;
+
   constructor(year: Year) {
     super(year);
+  }
+  update() {
+    const kMaxWithoutEllipse = 70;
+    let text = this.readData();
+    if (this.expanded || text.length < kMaxWithoutEllipse) {
+      SetText(this.div, text);
+      return;
+    }
+    let snippet = text.substring(0, kMaxWithoutEllipse);
+    SetText(this.div, snippet);
+    if (!this.ellipsis) {
+      this.ellipsis = document.createElement("button");
+      this.ellipsis.className = "ellipsis";
+      this.ellipsis.classList.add("generic");
+      this.ellipsis.appendChild(document.createTextNode("…"));
+      this.ellipsis.onclick = (e) => {
+        this.expand();
+      }
+      this.div.appendChild(this.ellipsis);
+    }
+  }
+  expand() {
+    this.expanded = true;
+    this.div.removeChild(this.ellipsis as Node);
+    this.ellipsis = null;
+    SetText(this.div, this.readData());
   }
   value() {
     if (!this.input) throw "must startEditing() before calling value()";

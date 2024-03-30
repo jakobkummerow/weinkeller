@@ -140,6 +140,21 @@ button.generic:active {
   background: linear-gradient(to top, #f5fdff, #9faeb3);
 }
 
+button.ellipsis {
+  position: relative;
+  top: -0.3em;
+  height: 1em;
+  margin-left: 0.5em;
+  display: inline-flex;
+  align-items: flex-end;
+  border-radius: 0.5em;
+  border: 1px solid/* #9faeb3*/;
+  /*background: linear-gradient(to bottom, #f5fdff, #9faeb3);
+  box-shadow: #c0e9f0 0px 0px 2px 1px;
+  text-shadow: #ffffff 1px 1px 1px;*/
+  font-weight: bold;
+}
+
 .winelistcontainer, .loglistcontainer {
   background-color: white;
   border: 1px solid #e0e0e0;

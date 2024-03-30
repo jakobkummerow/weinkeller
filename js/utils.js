@@ -67,7 +67,7 @@ const kCatchAllGrapes = {
 };
 const kGrapeGuesses = {
     'Grauer Burgunder': 'Grauburgunder',
-    'Klingelberg': 'Riesling',
+    'Klingelberg': 'Riesling', // Implicitly covers "Klingelberger".
     'Pinot Blanc': 'Weißburgunder',
     'Pinot Gris': 'Grauburgunder',
     'Pinot Grigio': 'Grauburgunder',

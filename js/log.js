@@ -4,7 +4,7 @@ const kLogLang = {
     wine: 'Wein',
     count: 'Anzahl',
     reason: 'Grund',
-    last_count_prefix: 'Letzte ',
+    last_count_prefix: 'Letzte ', // "<10> most recent changes".
     last_count_postfix: ' Änderungen:',
 };
 var ChangeDirection;

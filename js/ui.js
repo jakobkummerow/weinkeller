@@ -14,8 +14,8 @@ var kLang = {
     age: 'Alter',
     location: 'Lagerort',
     checkmark: '\u2714',
-    edit_button_text: '\u270E',
-    save_string: '\u2714',
+    edit_button_text: '\u270E', // pencil
+    save_string: '\u2714', // checkmark
     plus_button_text: '+',
     minus_button_text: '−',
     delete_button_text: '\u2717',
@@ -309,6 +309,34 @@ class PriceTD extends EditableTD {
 class CommentTD extends EditableTD {
     constructor(year) {
         super(year);
+        this.expanded = false;
+        this.ellipsis = null;
+    }
+    update() {
+        const kMaxWithoutEllipse = 70;
+        let text = this.readData();
+        if (this.expanded || text.length < kMaxWithoutEllipse) {
+            SetText(this.div, text);
+            return;
+        }
+        let snippet = text.substring(0, kMaxWithoutEllipse);
+        SetText(this.div, snippet);
+        if (!this.ellipsis) {
+            this.ellipsis = document.createElement("button");
+            this.ellipsis.className = "ellipsis";
+            this.ellipsis.classList.add("generic");
+            this.ellipsis.appendChild(document.createTextNode("…"));
+            this.ellipsis.onclick = (e) => {
+                this.expand();
+            };
+            this.div.appendChild(this.ellipsis);
+        }
+    }
+    expand() {
+        this.expanded = true;
+        this.div.removeChild(this.ellipsis);
+        this.ellipsis = null;
+        SetText(this.div, this.readData());
     }
     value() {
         if (!this.input)
