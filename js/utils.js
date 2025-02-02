@@ -25,6 +25,7 @@ const kKnownGrapes = {
     "Dornfelder": GrapeColor.kRed,
     "Frühburgunder": GrapeColor.kRed,
     "Gewürztraminer": GrapeColor.kWhite,
+    "Graciano": GrapeColor.kRed,
     "Grenache": GrapeColor.kRed,
     "Gutedel": GrapeColor.kWhite,
     "Grauburgunder": GrapeColor.kWhite,
@@ -40,7 +41,6 @@ const kKnownGrapes = {
     "Primitivo": GrapeColor.kRed,
     "Regent": GrapeColor.kRed,
     "Riesling": GrapeColor.kWhite,
-    "Rioja": GrapeColor.kRed,
     "Saint Laurent": GrapeColor.kRed,
     "Sangiovese": GrapeColor.kRed,
     "Sauvignon Blanc": GrapeColor.kWhite,
@@ -53,6 +53,7 @@ const kKnownGrapes = {
     "Trollinger": GrapeColor.kRed,
     "Vernatsch": GrapeColor.kRed,
     "Viognier": GrapeColor.kWhite,
+    "Viura": GrapeColor.kWhite,
     "Weißburgunder": GrapeColor.kWhite,
     "Zweigelt": GrapeColor.kRed,
 };
@@ -66,8 +67,9 @@ const kCatchAllGrapes = {
     "Sekt": GrapeColor.kSparkling,
 };
 const kGrapeGuesses = {
+    'Garnacha': 'Grenache',
     'Grauer Burgunder': 'Grauburgunder',
-    'Klingelberg': 'Riesling', // Implicitly covers "Klingelberger".
+    'Klingelberg': 'Riesling',
     'Pinot Blanc': 'Weißburgunder',
     'Pinot Gris': 'Grauburgunder',
     'Pinot Grigio': 'Grauburgunder',

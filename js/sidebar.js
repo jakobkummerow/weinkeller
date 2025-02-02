@@ -537,9 +537,9 @@ var kCLang = {
     last_success: 'Letzte',
     next_attempt: 'Nächste',
     never: 'nie',
-    ago_prefix: 'vor ', // For past points in time: "2 hours ago".
+    ago_prefix: 'vor ',
     ago_postfix: '',
-    in_prefix: 'in ', // For future points in time: "in 2 hours".
+    in_prefix: 'in ',
     in_postfix: '',
 };
 function formatTimeDelta(delta) {
