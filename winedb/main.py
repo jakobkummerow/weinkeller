@@ -49,7 +49,7 @@ class Main():
       # Only do the import here so we can run on systems that don't have PyQt.
       from .gui import App
       app = App(self, argv)
-      app.exec_()
+      app.exec()
     else:
       print('headless mode, not starting GUI')
       try:

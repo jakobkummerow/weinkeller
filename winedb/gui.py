@@ -5,9 +5,25 @@ import subprocess
 import webbrowser
 import sys
 
-import PyQt5.QtCore as qtcore
-import PyQt5.QtGui as qtgui
-import PyQt5.QtWidgets as qt
+PYQT_VERSION = 6
+try:
+  import PyQt6.QtCore as qtcore
+except ModuleNotFoundError:
+  PYQT_VERSION = 5
+  try:
+    import PyQt5.QtCore as qtcore
+  except:
+    print("Please install either PyQt5 or PyQt6, or run with --headless")
+    sys.exit(1)
+if PYQT_VERSION == 5:
+  import PyQt5.QtGui as qtgui
+  import PyQt5.QtWidgets as qt
+elif PYQT_VERSION == 6:
+  import PyQt6.QtGui as qtgui
+  import PyQt6.QtWidgets as qt
+else:
+  print(f"Unexpected PYQT_VERSION={PYQT_VERSION}, likely a bug")
+  sys.exit(1)
 
 class SystemTrayIcon(qt.QSystemTrayIcon):
   def __init__(self, icon, parent):
