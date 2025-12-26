@@ -1004,6 +1004,7 @@ class TableSorter {
   private color_filter = GrapeColor.kAny;
   private grape_filter = kAny;
   private year_filter = 0;
+  private year_until_filter = 0;
   private country_filter = kAny;
   private region_filter = kAny;
   private getYear = (year: Year) => year.data.year;
@@ -1070,9 +1071,10 @@ class TableSorter {
     this.grape_filter = grape;
     this.sortAgain();
   }
-  public setYearFilter(year: number) {
-    if (year === this.year_filter) return;
-    this.year_filter = year;
+  public setYearFilter(from: number, to: number) {
+    if (from === this.year_filter && to === this.year_until_filter) return;
+    this.year_filter = from;
+    this.year_until_filter = to;
     this.sortAgain();
   }
   public setCountryFilter(country: string) {
@@ -1119,7 +1121,14 @@ class TableSorter {
       }
     }
     if (this.year_filter !== 0) {
-      if (year.data.year !== this.year_filter) return false;
+      if (this.year_until_filter === 0) {
+        if (year.data.year !== this.year_filter) return false;
+      } else {
+        if (year.data.year < this.year_filter ||
+            year.data.year > this.year_until_filter) {
+          return false;
+        }
+      }
     }
     if (this.country_filter !== kAny) {
       const country = year.wine.vineyard.data.country;
@@ -1456,8 +1465,8 @@ class WinelistUI {
   public setGrapeFilter(grape: string) {
     this.sorter.setGrapeFilter(grape);
   }
-  public setYearFilter(year: number) {
-    this.sorter.setYearFilter(year);
+  public setYearFilter(year_from: number, year_to: number) {
+    this.sorter.setYearFilter(year_from, year_to);
   }
   public setCountryFilter(country: string) {
     this.sorter.setCountryFilter(country);

@@ -21,6 +21,7 @@ var kSideLang = {
     unknown: "unbekannt",
     grapes_all: "alle Trauben",
     years_all: "alle Jahre",
+    years_until_all: "bis...",
     countries_all: "alle Länder",
     regions_all: "alle Regionen",
     reasons: {
@@ -76,6 +77,7 @@ class DynamicDropdown {
         return this.select;
     }
     value() { return this.select.value; }
+    element() { return this.select; }
     add(value) {
         let option = document.createElement('option');
         option.value = value;
@@ -92,7 +94,7 @@ class DynamicDropdown {
     updateShown() {
         let p = this.select.firstChild;
         p = p.nextSibling;
-        while (p.value !== kUnknown) {
+        while (p && p.value !== kUnknown) {
             p.style.display = this.displayStyle(p.value);
             p = p.nextSibling;
         }
@@ -143,6 +145,20 @@ class YearFilter extends DynamicDropdown {
     }
     showUnknownOption() {
         return false;
+    }
+}
+class YearUntilFilter extends YearFilter {
+    constructor(year_filter) {
+        super();
+        this.year_filter = year_filter;
+        this.all_label = kSideLang.years_until_all;
+    }
+    ;
+    displayStyle(year) {
+        if (+year > +this.year_filter.value()) {
+            return '';
+        }
+        return 'none';
     }
 }
 class CountryFilter extends DynamicDropdown {
@@ -201,6 +217,7 @@ class Sidebar {
         this.grape_color_select = document.createElement('select');
         this.grape_select = new GrapeFilter();
         this.year_select = new YearFilter();
+        this.year_until_select = new YearUntilFilter(this.year_select);
         this.country_select = new CountryFilter();
         this.region_select = new RegionFilter();
         this.reason_add_select = document.createElement('select');
@@ -246,6 +263,10 @@ class Sidebar {
         this.filter_div.appendChild(this.year_select.create(this.winelist.data, (_) => {
             this.changeYearFilter();
         }));
+        this.filter_div.appendChild(this.year_until_select.create(this.winelist.data, (_) => {
+            this.changeYearFilter();
+        }));
+        this.year_until_select.element().style.display = 'none';
         this.filter_div.appendChild(this.country_select.create(this.winelist.data, (_) => {
             this.changeCountryFilter();
         }));
@@ -487,8 +508,20 @@ class Sidebar {
     }
     changeYearFilter() {
         let year = this.year_select.value();
-        let year_number = year === kAny ? 0 : +year;
-        this.winelist.setYearFilter(year_number);
+        let year_from, year_to;
+        if (year === kAny) {
+            year_from = 0;
+            year_to = 0;
+            this.year_until_select.element().style.display = 'none';
+        }
+        else {
+            year_from = +year;
+            let year_until = this.year_until_select.value();
+            year_to = year_until === kAny ? 0 : +year_until;
+            this.year_until_select.element().style.display = '';
+            this.year_until_select.updateShown();
+        }
+        this.winelist.setYearFilter(year_from, year_to);
         this.updateFilterHighlight();
     }
     changeCountryFilter() {
@@ -537,9 +570,9 @@ var kCLang = {
     last_success: 'Letzte',
     next_attempt: 'Nächste',
     never: 'nie',
-    ago_prefix: 'vor ',
+    ago_prefix: 'vor ', // For past points in time: "2 hours ago".
     ago_postfix: '',
-    in_prefix: 'in ',
+    in_prefix: 'in ', // For future points in time: "in 2 hours".
     in_postfix: '',
 };
 function formatTimeDelta(delta) {

@@ -14,8 +14,8 @@ var kLang = {
     age: 'Alter',
     location: 'Lagerort',
     checkmark: '\u2714',
-    edit_button_text: '\u270E',
-    save_string: '\u2714',
+    edit_button_text: '\u270E', // pencil
+    save_string: '\u2714', // checkmark
     plus_button_text: '+',
     minus_button_text: '−',
     delete_button_text: '\u2717',
@@ -981,6 +981,7 @@ class TableSorter {
         this.color_filter = GrapeColor.kAny;
         this.grape_filter = kAny;
         this.year_filter = 0;
+        this.year_until_filter = 0;
         this.country_filter = kAny;
         this.region_filter = kAny;
         this.getYear = (year) => year.data.year;
@@ -1048,10 +1049,11 @@ class TableSorter {
         this.grape_filter = grape;
         this.sortAgain();
     }
-    setYearFilter(year) {
-        if (year === this.year_filter)
+    setYearFilter(from, to) {
+        if (from === this.year_filter && to === this.year_until_filter)
             return;
-        this.year_filter = year;
+        this.year_filter = from;
+        this.year_until_filter = to;
         this.sortAgain();
     }
     setCountryFilter(country) {
@@ -1105,8 +1107,16 @@ class TableSorter {
             }
         }
         if (this.year_filter !== 0) {
-            if (year.data.year !== this.year_filter)
-                return false;
+            if (this.year_until_filter === 0) {
+                if (year.data.year !== this.year_filter)
+                    return false;
+            }
+            else {
+                if (year.data.year < this.year_filter ||
+                    year.data.year > this.year_until_filter) {
+                    return false;
+                }
+            }
         }
         if (this.country_filter !== kAny) {
             const country = year.wine.vineyard.data.country;
@@ -1460,8 +1470,8 @@ class WinelistUI {
     setGrapeFilter(grape) {
         this.sorter.setGrapeFilter(grape);
     }
-    setYearFilter(year) {
-        this.sorter.setYearFilter(year);
+    setYearFilter(year_from, year_to) {
+        this.sorter.setYearFilter(year_from, year_to);
     }
     setCountryFilter(country) {
         this.sorter.setCountryFilter(country);

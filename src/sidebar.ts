@@ -22,6 +22,7 @@ var kSideLang = {
   unknown: "unbekannt",
   grapes_all: "alle Trauben",
   years_all: "alle Jahre",
+  years_until_all: "bis...",
   countries_all: "alle Länder",
   regions_all: "alle Regionen",
   reasons: {
@@ -82,6 +83,7 @@ abstract class DynamicDropdown {
   }
 
   public value() { return this.select.value; }
+  public element(): HTMLElement { return this.select; }
 
   public add(value: string) {
     let option = document.createElement('option');
@@ -100,7 +102,7 @@ abstract class DynamicDropdown {
   public updateShown() {
     let p = this.select.firstChild as HTMLOptionElement;
     p = p.nextSibling as HTMLOptionElement;
-    while (p.value !== kUnknown) {
+    while (p && p.value !== kUnknown) {
       p.style.display = this.displayStyle(p.value);
       p = p.nextSibling as HTMLOptionElement;
     }
@@ -153,6 +155,17 @@ class YearFilter extends DynamicDropdown {
   }
 }
 
+class YearUntilFilter extends YearFilter {
+  protected all_label = kSideLang.years_until_all;
+  constructor(protected year_filter: YearFilter) { super(); };
+  displayStyle(year: string) {
+    if (+year > +this.year_filter.value()) {
+      return '';
+    }
+    return 'none';
+  }
+}
+
 class CountryFilter extends DynamicDropdown {
   protected all_label = kSideLang.countries_all;
   protected getValues() {
@@ -201,6 +214,7 @@ class Sidebar {
   private grape_color_select = document.createElement('select');
   private grape_select = new GrapeFilter();
   private year_select = new YearFilter();
+  private year_until_select = new YearUntilFilter(this.year_select);
   private country_select = new CountryFilter();
   private region_select = new RegionFilter();
   private reason_add_select = document.createElement('select');
@@ -251,6 +265,11 @@ class Sidebar {
         this.year_select.create(this.winelist.data, (_) => {
           this.changeYearFilter();
         }));
+    this.filter_div.appendChild(
+        this.year_until_select.create(this.winelist.data, (_) => {
+          this.changeYearFilter();
+        }));
+    this.year_until_select.element().style.display = 'none';
     this.filter_div.appendChild(
         this.country_select.create(this.winelist.data, (_) => {
           this.changeCountryFilter();
@@ -508,8 +527,19 @@ class Sidebar {
 
   private changeYearFilter() {
     let year = this.year_select.value();
-    let year_number = year === kAny ? 0 : +year;
-    this.winelist.setYearFilter(year_number);
+    let year_from, year_to;
+    if (year === kAny) {
+      year_from = 0;
+      year_to = 0;
+      this.year_until_select.element().style.display = 'none';
+    } else {
+      year_from = +year;
+      let year_until = this.year_until_select.value();
+      year_to = year_until === kAny ? 0 : +year_until;
+      this.year_until_select.element().style.display = '';
+      this.year_until_select.updateShown();
+    }
+    this.winelist.setYearFilter(year_from, year_to);
     this.updateFilterHighlight();
   }
 
