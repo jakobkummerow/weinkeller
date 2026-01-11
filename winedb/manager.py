@@ -406,7 +406,7 @@ class Manager:
     }
 
   def Set(self, postdata):
-    if "extra_backup" in postdata:
+    if postdata.get("extra_backup", default=False):
       self._ExtraBackup()
     with Update(self):
       result = {}
