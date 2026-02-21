@@ -14,8 +14,8 @@ var kLang = {
     age: 'Alter',
     location: 'Lagerort',
     checkmark: '\u2714',
-    edit_button_text: '\u270E', // pencil
-    save_string: '\u2714', // checkmark
+    edit_button_text: '\u270E',
+    save_string: '\u2714',
     plus_button_text: '+',
     minus_button_text: '−',
     delete_button_text: '\u2717',

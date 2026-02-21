@@ -26,6 +26,7 @@ const kKnownGrapes: any = {
   "Chardonnay": GrapeColor.kWhite,
   "Dornfelder": GrapeColor.kRed,
   "Frühburgunder": GrapeColor.kRed,
+  "Gamay": GrapeColor.kRed,
   "Gewürztraminer": GrapeColor.kWhite,
   "Graciano": GrapeColor.kRed,
   "Grenache": GrapeColor.kRed,
@@ -35,6 +36,7 @@ const kKnownGrapes: any = {
   "Kerner": GrapeColor.kWhite,
   "Lagrein": GrapeColor.kRed,
   "Lemberger": GrapeColor.kRed,
+  "Mencia": GrapeColor.kRed,
   "Merlot": GrapeColor.kRed,
   "Muskateller": GrapeColor.kWhite,
   "Müller-Thurgau": GrapeColor.kWhite,
@@ -71,9 +73,11 @@ const kCatchAllGrapes: any = {
 }
 
 const kGrapeGuesses: any = {
+  'Blaufränkisch': 'Lemberger',
   'Garnacha': 'Grenache',
   'Grauer Burgunder': 'Grauburgunder',
   'Klingelberg': 'Riesling',  // Implicitly covers "Klingelberger".
+  'Mencía': 'Mencia',
   'Pinot Blanc': 'Weißburgunder',
   'Pinot Gris': 'Grauburgunder',
   'Pinot Grigio': 'Grauburgunder',
